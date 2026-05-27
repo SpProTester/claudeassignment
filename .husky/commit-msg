@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+# =============================================================================
+# HUSKY COMMIT-MSG HOOK
+# Validates the commit message against Conventional Commits specification.
+# Blocks the commit if the message does not match the required format.
+#
+# Required format: <type>(<scope>): <subject>
+# Examples:
+#   feat(auth): add Google OAuth 2.0 login
+#   fix(jobs): resolve pagination offset calculation bug
+#   docs(api): update job seeker endpoint documentation
+#   BREAKING CHANGE: remove deprecated /v1/jobs endpoint
+# =============================================================================
+
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "📝 Validating commit message format..."
+
+# Run commitlint against the commit message file
+pnpm commitlint --edit "$1"
+
+echo "✅ Commit message is valid."

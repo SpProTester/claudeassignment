@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+# =============================================================================
+# HUSKY PRE-COMMIT HOOK
+# Runs lint-staged on all staged files before committing.
+# Blocks the commit if any linter or formatter reports errors.
+# Fast: only processes staged files, not the whole codebase.
+# =============================================================================
+
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit checks on staged files..."
+
+# Run lint-staged (ESLint + Prettier on staged files only)
+pnpm lint-staged
+
+echo "✅ Pre-commit checks passed."

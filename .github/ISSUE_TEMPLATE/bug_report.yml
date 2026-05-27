@@ -1,0 +1,144 @@
+name: Bug Report
+description: Report a bug or unexpected behavior in the Job Portal platform
+title: "fix(<scope>): <short description of the bug>"
+labels: ["bug", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Bug Report
+        Thank you for taking the time to file a bug report.
+        Please fill in as much detail as possible to help us reproduce and fix the issue quickly.
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Affected Module
+      description: Which part of the platform is affected?
+      multiple: true
+      options:
+        - Auth (login/registration/OAuth/MFA)
+        - Public Website (homepage/job listings/search)
+        - Job Seeker (profile/resume/applications/dashboard)
+        - Employer (company profile/job posting/ATS/analytics)
+        - Admin Console
+        - AI / Recommendations
+        - Payments / Subscriptions
+        - Notifications
+        - Database / API
+        - UI / Design System
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is the impact of this bug?
+      options:
+        - "Critical — Platform unusable, data loss, or security issue"
+        - "High — Core feature broken, significant user impact"
+        - "Medium — Feature partially broken, workaround exists"
+        - "Low — Minor issue, cosmetic problem"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: When I try to [action], [unexpected thing] happens instead of [expected thing].
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Exact steps to reproduce the behavior.
+      value: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Fill in '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happens? Include error messages, stack traces, or console output.
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / Screen Recordings
+      description: If applicable, add screenshots or screen recordings to help explain the problem.
+      placeholder: Drag and drop images here, or paste URLs.
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Where does the bug occur?
+      options:
+        - Production (jobportal.com)
+        - Staging
+        - Local development
+        - All environments
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser / Device
+      description: Browser name and version, or device type (e.g., Chrome 124, Safari 17, iPhone 15)
+      placeholder: "Chrome 124.0 on macOS 14"
+
+  - type: input
+    id: user-role
+    attributes:
+      label: User Role
+      description: What role were you logged in as when the bug occurred?
+      placeholder: "Job Seeker / Employer / Admin / Guest (not logged in)"
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs / Error Messages
+      description: Paste any relevant browser console errors, API error responses, or server logs.
+      render: shell
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context that might be relevant (recent changes, frequency of occurrence, etc.)
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I have searched existing issues and this is not a duplicate
+          required: true
+        - label: I have provided enough information to reproduce the bug
+          required: true
+        - label: I have included browser/environment information
+          required: true

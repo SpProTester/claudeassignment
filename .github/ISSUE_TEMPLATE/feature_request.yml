@@ -1,0 +1,143 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for the Job Portal platform
+title: "feat(<scope>): <short description of the feature>"
+labels: ["feature", "needs-review"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Feature Request
+        Thank you for suggesting an improvement to the Job Portal platform.
+        Well-described feature requests get prioritized faster.
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Target Module
+      description: Which module would this feature belong to?
+      multiple: true
+      options:
+        - Auth (login/registration/OAuth/MFA)
+        - Public Website (homepage/job listings/search/SEO)
+        - Job Seeker (profile/resume/applications/dashboard)
+        - Employer (company profile/job posting/ATS/analytics)
+        - Admin Console (user management/moderation/config)
+        - AI / Recommendations (job matching/resume parsing)
+        - Payments / Subscriptions (Stripe/Razorpay/invoices)
+        - Notifications (email/in-app/push/SMS)
+        - Performance / Scalability
+        - Security / Compliance
+        - Developer Experience (tooling/DX/CI/CD)
+        - API (new endpoints/third-party integration)
+        - New Module / Cross-cutting
+    validations:
+      required: true
+
+  - type: dropdown
+    id: user-role
+    attributes:
+      label: Benefiting User Role(s)
+      description: Who would benefit from this feature?
+      multiple: true
+      options:
+        - Job Seeker
+        - Employer (Free)
+        - Employer (Premium)
+        - Recruiter
+        - Platform Admin
+        - Super Admin
+        - Guest / Public
+        - All Users
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / Motivation
+      description: What problem does this feature solve? Why is it needed?
+      placeholder: |
+        As a [user role], I currently have to [painful workaround] because [limitation].
+        This causes [negative impact] and wastes [time/effort/money].
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe your ideal solution. Be as specific as possible.
+      placeholder: |
+        I would like [feature] that allows [capability].
+        The user flow would be: 1. ... 2. ... 3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What other approaches did you consider? Why is your proposed solution better?
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: How would we know this feature is complete and working correctly?
+      placeholder: |
+        - [ ] User can ...
+        - [ ] System does ...
+        - [ ] Edge case X is handled by ...
+        - [ ] Performance: response time < X ms
+        - [ ] Accessible: keyboard navigable, screen reader compatible
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Business Priority (your assessment)
+      description: How important is this feature to you?
+      options:
+        - Critical — Blocking adoption or causing significant revenue loss
+        - High — Significantly improves core user experience
+        - Medium — Nice to have, meaningful improvement
+        - Low — Minor enhancement or convenience feature
+    validations:
+      required: true
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: Mockups / Examples
+      description: |
+        Add wireframes, mockups, screenshots from competitor products, or links to examples.
+        Drag and drop images here.
+
+  - type: textarea
+    id: technical-notes
+    attributes:
+      label: Technical Notes (optional)
+      description: |
+        Any technical context that might be relevant?
+        e.g., API integrations needed, third-party services, database schema considerations, performance constraints.
+
+  - type: checkboxes
+    id: roadmap
+    attributes:
+      label: Roadmap Check
+      options:
+        - label: I have checked the Future Roadmap section of the SRS — this feature is not already planned
+        - label: I have searched existing issues and this is not a duplicate
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I have clearly described the problem this feature solves
+          required: true
+        - label: I have provided acceptance criteria
+          required: true
+        - label: I have considered the user roles that benefit from this feature
+          required: true

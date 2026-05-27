@@ -1,0 +1,148 @@
+##############################################################################
+# SECURITY SCAN — Job Portal Enterprise
+# Runs on: push to main/develop, every PR, and weekly on schedule.
+# Scans: npm audit, CodeQL static analysis, dependency vulnerability check.
+# OWASP compliance requirement from SRS §4.3.3
+##############################################################################
+
+name: Security
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Weekly scan every Monday at 08:00 UTC
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+    inputs:
+      severity:
+        description: 'Minimum severity level to report'
+        required: false
+        default: 'moderate'
+        type: choice
+        options:
+          - low
+          - moderate
+          - high
+          - critical
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20.x'
+  PNPM_VERSION: '9.1.0'
+
+jobs:
+  # ============================================================================
+  # NPM AUDIT — Check for known vulnerabilities in dependencies
+  # ============================================================================
+  npm-audit:
+    name: npm Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Run pnpm audit
+        run: |
+          SEVERITY="${{ github.event.inputs.severity || 'moderate' }}"
+          echo "Running security audit with minimum severity: $SEVERITY"
+          pnpm audit --audit-level=$SEVERITY --prod 2>&1 | tee audit-results.txt || true
+
+          # Parse audit results
+          if grep -q '"vulnerabilities"' audit-results.txt 2>/dev/null; then
+            echo "⚠️ Vulnerabilities found. See audit-results.txt for details."
+            # Fail on high/critical
+            pnpm audit --audit-level=high --prod
+          fi
+
+      - name: Upload audit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-${{ github.sha }}
+          path: audit-results.txt
+          retention-days: 30
+
+  # ============================================================================
+  # CODEQL — Static code analysis for security vulnerabilities
+  # Detects: XSS, SQL injection, path traversal, and more
+  # ============================================================================
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript-typescript']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # Custom queries for additional security checks
+          queries: security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:${{ matrix.language }}'
+
+  # ============================================================================
+  # SECRET SCANNING — Detect accidentally committed secrets
+  # ============================================================================
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for secrets with Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        with:
+          args: detect --source=. --verbose --redact
+
+  # ============================================================================
+  # DEPENDENCY REVIEW — PR-only check for new vulnerable deps
+  # ============================================================================
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+          deny-licenses: GPL-2.0, GPL-3.0, LGPL-2.0, LGPL-2.1
+          comment-summary-in-pr: always

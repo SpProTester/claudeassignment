@@ -1,0 +1,83 @@
+# =============================================================================
+# CODEOWNERS — Job Portal Enterprise
+# Defines required reviewers for specific paths.
+# When a PR modifies a path listed here, the corresponding team/user is
+# automatically added as a required reviewer.
+#
+# Format: <path pattern>  <@user or @org/team>
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+# =============================================================================
+
+# Default owners for everything not explicitly matched below
+*                                           @your-org/engineering-leads
+
+# =============================================================================
+# INFRASTRUCTURE & SECURITY — Must be reviewed by platform leads
+# =============================================================================
+
+# CI/CD pipelines
+.github/workflows/                          @your-org/devops @your-org/engineering-leads
+
+# Security workflows
+.github/workflows/security.yml              @your-org/security @your-org/engineering-leads
+
+# Husky hooks (affects all developer workflow)
+.husky/                                     @your-org/engineering-leads
+
+# Release configuration
+.releaserc.json                             @your-org/engineering-leads
+package.json                                @your-org/engineering-leads
+
+# =============================================================================
+# DATABASE — Must be reviewed by backend lead + DBA
+# =============================================================================
+
+supabase/migrations/                        @your-org/backend-leads @your-org/dba
+supabase/functions/                         @your-org/backend-leads
+
+# =============================================================================
+# AUTHENTICATION & SECURITY — Require security team sign-off
+# =============================================================================
+
+apps/web/src/app/api/auth/                  @your-org/security @your-org/backend-leads
+apps/web/src/lib/auth/                      @your-org/security @your-org/backend-leads
+apps/web/src/middleware.ts                  @your-org/security @your-org/engineering-leads
+
+# =============================================================================
+# PAYMENTS — Require payment team + engineering lead review
+# =============================================================================
+
+apps/web/src/app/api/payments/              @your-org/payments-team @your-org/engineering-leads
+apps/web/src/lib/payments/                  @your-org/payments-team @your-org/engineering-leads
+
+# =============================================================================
+# AI / RECOMMENDATIONS — Require AI team review
+# =============================================================================
+
+apps/web/src/lib/ai/                        @your-org/ai-team @your-org/backend-leads
+supabase/functions/resume-parser/           @your-org/ai-team
+supabase/functions/job-match-engine/        @your-org/ai-team
+
+# =============================================================================
+# ADMIN CONSOLE — Require engineering lead + security sign-off
+# =============================================================================
+
+apps/admin/                                 @your-org/engineering-leads @your-org/security
+apps/web/src/app/api/admin/                 @your-org/engineering-leads @your-org/security
+
+# =============================================================================
+# SHARED PACKAGES — Require frontend lead review
+# =============================================================================
+
+packages/ui/                                @your-org/frontend-leads
+packages/types/                             @your-org/engineering-leads
+packages/config/                            @your-org/engineering-leads
+packages/utils/                             @your-org/engineering-leads
+
+# =============================================================================
+# DOCUMENTATION
+# =============================================================================
+
+docs/                                       @your-org/engineering-leads
+*.md                                        @your-org/engineering-leads
+CONTRIBUTING.md                             @your-org/engineering-leads

@@ -1,0 +1,170 @@
+# =============================================================================
+# DEPENDABOT — Automated Dependency Updates
+# Job Portal Enterprise
+# Keeps all dependencies up-to-date automatically via PRs.
+# =============================================================================
+
+version: 2
+
+updates:
+  # ---------------------------------------------------------------------------
+  # ROOT MONOREPO — devDependencies (Husky, lint-staged, semantic-release, etc.)
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'UTC'
+    open-pull-requests-limit: 10
+    labels:
+      - 'deps'
+      - 'automated'
+    commit-message:
+      prefix: 'chore(deps)'
+      include: 'scope'
+    reviewers:
+      - 'your-org/engineering-leads'
+    groups:
+      # Group all dev tools together to reduce PR noise
+      dev-tools:
+        patterns:
+          - 'husky'
+          - 'lint-staged'
+          - '@commitlint/*'
+          - 'commitizen'
+          - 'semantic-release'
+          - '@semantic-release/*'
+          - 'turbo'
+    ignore:
+      # Pin major versions — upgrade manually with team discussion
+      - dependency-name: 'turbo'
+        update-types: ['version-update:semver-major']
+
+  # ---------------------------------------------------------------------------
+  # WEB APP — apps/web
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: 'npm'
+    directory: '/apps/web'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'UTC'
+    open-pull-requests-limit: 15
+    labels:
+      - 'deps'
+      - 'automated'
+      - 'web-app'
+    commit-message:
+      prefix: 'chore(deps)'
+      include: 'scope'
+    reviewers:
+      - 'your-org/frontend-leads'
+    groups:
+      # Next.js ecosystem — upgrade together to avoid version conflicts
+      nextjs:
+        patterns:
+          - 'next'
+          - 'react'
+          - 'react-dom'
+          - '@types/react'
+          - '@types/react-dom'
+      # Supabase — upgrade together
+      supabase:
+        patterns:
+          - '@supabase/*'
+      # Tailwind CSS ecosystem
+      tailwind:
+        patterns:
+          - 'tailwindcss'
+          - '@tailwindcss/*'
+          - 'autoprefixer'
+          - 'postcss'
+      # Radix UI primitives
+      radix:
+        patterns:
+          - '@radix-ui/*'
+      # Testing tools
+      testing:
+        patterns:
+          - 'vitest'
+          - '@testing-library/*'
+          - 'playwright'
+          - '@playwright/*'
+    ignore:
+      # Pin Next.js major versions — test thoroughly before upgrading
+      - dependency-name: 'next'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'react'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'react-dom'
+        update-types: ['version-update:semver-major']
+
+  # ---------------------------------------------------------------------------
+  # ADMIN APP — apps/admin
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: 'npm'
+    directory: '/apps/admin'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'UTC'
+    open-pull-requests-limit: 10
+    labels:
+      - 'deps'
+      - 'automated'
+      - 'admin-app'
+    commit-message:
+      prefix: 'chore(deps)'
+      include: 'scope'
+    reviewers:
+      - 'your-org/engineering-leads'
+
+  # ---------------------------------------------------------------------------
+  # SHARED PACKAGES
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: 'npm'
+    directory: '/packages/ui'
+    schedule:
+      interval: 'weekly'
+      day: 'tuesday'
+      time: '06:00'
+      timezone: 'UTC'
+    open-pull-requests-limit: 5
+    labels:
+      - 'deps'
+      - 'automated'
+      - 'packages'
+    commit-message:
+      prefix: 'chore(deps)'
+      include: 'scope'
+    reviewers:
+      - 'your-org/frontend-leads'
+
+  # ---------------------------------------------------------------------------
+  # GITHUB ACTIONS — Keep workflow actions up-to-date
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+      time: '06:00'
+      timezone: 'UTC'
+    open-pull-requests-limit: 5
+    labels:
+      - 'ci/cd'
+      - 'automated'
+    commit-message:
+      prefix: 'ci(deps)'
+      include: 'scope'
+    reviewers:
+      - 'your-org/devops'
+    groups:
+      # Group all action updates together
+      github-actions:
+        patterns:
+          - '*'

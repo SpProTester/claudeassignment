@@ -1,0 +1,238 @@
+##############################################################################
+# CI PIPELINE — Job Portal Enterprise
+# Triggered on every PR and every push to develop/main.
+# Runs: lint → type-check → test → build → coverage report
+##############################################################################
+
+name: CI
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+      - 'release/**'
+  pull_request:
+    branches:
+      - develop
+      - main
+      - 'release/**'
+    types: [opened, synchronize, reopened, ready_for_review]
+
+# Cancel in-progress runs on the same branch when a new push arrives.
+# Prevents wasted CI minutes on outdated commits.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20.x'
+  PNPM_VERSION: '9.1.0'
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+
+jobs:
+  # ============================================================================
+  # GUARD: Skip CI for draft PRs and bot commits
+  # ============================================================================
+  guard:
+    name: Guard
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.check.outputs.should_skip }}
+    steps:
+      - name: Check if should skip
+        id: check
+        run: |
+          if [[ "${{ github.event.pull_request.draft }}" == "true" ]]; then
+            echo "should_skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_skip=false" >> $GITHUB_OUTPUT
+          fi
+
+  # ============================================================================
+  # SETUP — Install dependencies (cached via pnpm store)
+  # ============================================================================
+  setup:
+    name: Setup
+    needs: guard
+    if: needs.guard.outputs.should_skip == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+  # ============================================================================
+  # LINT — ESLint + Prettier check
+  # ============================================================================
+  lint:
+    name: Lint
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        run: pnpm lint
+
+      - name: Check Prettier formatting
+        run: pnpm format:check
+
+  # ============================================================================
+  # TYPE CHECK — TypeScript strict mode
+  # ============================================================================
+  type-check:
+    name: Type Check
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Run TypeScript type check
+        run: pnpm type-check
+
+  # ============================================================================
+  # TEST — Unit tests with coverage
+  # ============================================================================
+  test:
+    name: Test
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Run unit tests with coverage
+        run: pnpm test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          flags: unit
+          name: unit-coverage
+          fail_ci_if_error: false
+
+      - name: Check coverage thresholds
+        run: |
+          echo "Coverage thresholds: 80% for business logic, 60% for API routes"
+          # Coverage threshold enforcement is done in vitest/jest config
+
+  # ============================================================================
+  # BUILD — Verify all apps build successfully
+  # ============================================================================
+  build:
+    name: Build
+    needs: [lint, type-check, test]
+    runs-on: ubuntu-latest
+    env:
+      # Dummy env vars to allow build to proceed in CI
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build all apps and packages
+        run: pnpm build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output-${{ github.sha }}
+          path: |
+            apps/web/.next/
+            apps/admin/.next/
+          retention-days: 1
+
+  # ============================================================================
+  # CI SUCCESS — Gate for branch protection rules
+  # All required jobs must pass before PR can be merged.
+  # ============================================================================
+  ci-success:
+    name: CI Success
+    needs: [lint, type-check, test, build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all jobs passed
+        run: |
+          if [[ "${{ needs.lint.result }}" != "success" || \
+                "${{ needs.type-check.result }}" != "success" || \
+                "${{ needs.test.result }}" != "success" || \
+                "${{ needs.build.result }}" != "success" ]]; then
+            echo "❌ One or more CI jobs failed."
+            exit 1
+          fi
+          echo "✅ All CI checks passed."

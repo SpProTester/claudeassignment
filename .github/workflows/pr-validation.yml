@@ -1,0 +1,248 @@
+##############################################################################
+# PR VALIDATION — Job Portal Enterprise
+# Validates PR title, branch naming, and labels on every PR event.
+# Enforces the team's Git workflow standards automatically.
+##############################################################################
+
+name: PR Validation
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+concurrency:
+  group: pr-validation-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # ============================================================================
+  # VALIDATE PR TITLE — Must follow Conventional Commits
+  # ============================================================================
+  validate-title:
+    name: Validate PR Title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate Conventional Commits PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Types allowed in PR titles
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+            security
+            a11y
+            i18n
+            db
+            release
+          # Scopes allowed (matches commitlint.config.js)
+          scopes: |
+            auth
+            mfa
+            oauth
+            session
+            jobs
+            seeker
+            employer
+            admin
+            ats
+            ai
+            payments
+            notifications
+            search
+            resume
+            analytics
+            subscriptions
+            api
+            db
+            migrations
+            middleware
+            edge-functions
+            storage
+            realtime
+            ui
+            components
+            hooks
+            store
+            layout
+            pages
+            forms
+            ci
+            cd
+            config
+            deps
+            docker
+            vercel
+            supabase
+            security
+            performance
+            a11y
+            seo
+            types
+            utils
+            testing
+          # Require a scope to be specified
+          requireScope: false
+          # Subject must start with lowercase
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            didn't match the configured pattern. Please ensure that the subject
+            starts with a lowercase character.
+          # Minimum length
+          minimumLength: 10
+          # Wip PRs allowed (WIP: prefix)
+          wip: true
+          validateSingleCommit: false
+
+  # ============================================================================
+  # VALIDATE BRANCH NAME
+  # ============================================================================
+  validate-branch:
+    name: Validate Branch Name
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch naming convention
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          echo "Branch: $BRANCH"
+
+          # Allowed patterns:
+          # feature/JP-123-description
+          # fix/JP-123-description
+          # hotfix/JP-123-description
+          # release/1.0.0
+          # chore/description
+          # docs/description
+          # refactor/description
+          # ci/description
+          # test/description
+          # perf/description
+          # security/JP-123-description
+
+          PATTERN="^(feature|fix|hotfix|release|chore|docs|refactor|ci|test|perf|security|revert|a11y|i18n|db)\/[a-z0-9]([a-z0-9-]{0,98}[a-z0-9])?$"
+
+          if echo "$BRANCH" | grep -qE "$PATTERN"; then
+            echo "✅ Branch name '$BRANCH' follows the naming convention."
+          else
+            echo ""
+            echo "❌ Branch name '$BRANCH' does NOT follow the naming convention."
+            echo ""
+            echo "Required format: <type>/<description>"
+            echo ""
+            echo "Examples:"
+            echo "  feature/JP-123-google-oauth-login"
+            echo "  fix/JP-456-resume-upload-mime-validation"
+            echo "  hotfix/JP-789-stripe-webhook-signature"
+            echo "  release/1.2.0"
+            echo "  chore/update-dependencies"
+            echo "  docs/api-endpoint-documentation"
+            echo ""
+            echo "Allowed types: feature, fix, hotfix, release, chore, docs,"
+            echo "               refactor, ci, test, perf, security, revert, a11y, i18n, db"
+            echo ""
+            echo "Full convention: docs/git/BRANCHING_STRATEGY.md"
+            exit 1
+          fi
+
+  # ============================================================================
+  # AUTO-LABEL PR — Based on branch type and changed files
+  # ============================================================================
+  auto-label:
+    name: Auto Label PR
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - name: Label PR based on branch name
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const branch = context.payload.pull_request.head.ref;
+            const prNumber = context.payload.pull_request.number;
+
+            const labelMap = {
+              'feature/':  ['feature', 'needs-review'],
+              'fix/':      ['bug', 'needs-review'],
+              'hotfix/':   ['hotfix', 'critical', 'needs-review'],
+              'release/':  ['release'],
+              'chore/':    ['chore'],
+              'docs/':     ['documentation'],
+              'refactor/': ['refactor'],
+              'ci/':       ['ci/cd'],
+              'test/':     ['testing'],
+              'perf/':     ['performance'],
+              'security/': ['security', 'critical'],
+              'a11y/':     ['accessibility'],
+              'db/':       ['database'],
+            };
+
+            const labelsToAdd = [];
+            for (const [prefix, labels] of Object.entries(labelMap)) {
+              if (branch.startsWith(prefix)) {
+                labelsToAdd.push(...labels);
+                break;
+              }
+            }
+
+            if (labelsToAdd.length > 0) {
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  labels: labelsToAdd,
+                });
+                console.log(`Applied labels: ${labelsToAdd.join(', ')}`);
+              } catch (error) {
+                console.log('Could not add labels (labels may not exist yet):', error.message);
+              }
+            }
+
+  # ============================================================================
+  # CHECK PR SIZE — Warn on very large PRs
+  # ============================================================================
+  check-pr-size:
+    name: Check PR Size
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR diff size
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+            });
+
+            const additions = pr.data.additions;
+            const deletions = pr.data.deletions;
+            const changedFiles = pr.data.changed_files;
+            const total = additions + deletions;
+
+            console.log(`PR Stats: +${additions} -${deletions} in ${changedFiles} files`);
+
+            if (total > 1000) {
+              const message = `⚠️ **Large PR Warning**\n\nThis PR changes **${total} lines** across **${changedFiles} files**.\n\nLarge PRs are harder to review and more likely to introduce bugs. Consider splitting this into smaller, focused PRs.\n\n- **Guideline**: Keep PRs under 400 lines of meaningful changes\n- **Exception**: Large PRs are OK for initial scaffolding, dependency updates, or generated code\n\n_This is a warning, not a blocker._`;
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body: message,
+              });
+            }

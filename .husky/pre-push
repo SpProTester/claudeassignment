@@ -1,0 +1,70 @@
+#!/usr/bin/env sh
+# =============================================================================
+# HUSKY PRE-PUSH HOOK
+# Runs TypeScript type-checking and unit tests before pushing to remote.
+# Prevents pushing broken code to shared branches.
+#
+# Note: This runs on the FULL codebase (not just staged files).
+# It is intentionally slower than pre-commit — catching type errors
+# and test failures before they hit CI.
+#
+# To bypass in emergencies ONLY (do not make a habit of this):
+#   git push --no-verify
+# =============================================================================
+
+. "$(dirname -- "$0")/_/husky.sh"
+
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+PROTECTED_BRANCHES="^(main|develop)$"
+
+echo ""
+echo "🚀 Running pre-push checks for branch: $BRANCH"
+echo "──────────────────────────────────────────────"
+
+# ---------------------------------------------------------------------------
+# 1. BLOCK DIRECT PUSH TO PROTECTED BRANCHES
+# All changes to main and develop must go through a Pull Request.
+# ---------------------------------------------------------------------------
+if echo "$BRANCH" | grep -qE "$PROTECTED_BRANCHES"; then
+  echo ""
+  echo "🚫 BLOCKED: Direct push to '$BRANCH' is not allowed."
+  echo "   All changes to '$BRANCH' must go through a Pull Request."
+  echo ""
+  echo "   To create a PR:"
+  echo "   1. Create a feature/fix branch:  git checkout -b feature/JP-XXX-your-feature"
+  echo "   2. Push your branch:             git push origin feature/JP-XXX-your-feature"
+  echo "   3. Open a PR on GitHub targeting '$BRANCH'"
+  echo ""
+  exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# 2. TYPESCRIPT TYPE CHECK
+# ---------------------------------------------------------------------------
+echo "📘 Running TypeScript type check..."
+pnpm type-check
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ TypeScript type check FAILED."
+  echo "   Fix type errors before pushing."
+  exit 1
+fi
+echo "✅ TypeScript check passed."
+
+# ---------------------------------------------------------------------------
+# 3. UNIT TESTS
+# ---------------------------------------------------------------------------
+echo ""
+echo "🧪 Running unit tests..."
+pnpm test --passWithNoTests
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ Unit tests FAILED."
+  echo "   Fix failing tests before pushing."
+  exit 1
+fi
+echo "✅ Tests passed."
+
+echo ""
+echo "✅ All pre-push checks passed. Pushing to remote..."
+echo ""
