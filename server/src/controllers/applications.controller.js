@@ -1,21 +1,21 @@
-import { Application, Job, Company, User } from '../models/index.js';
+import { Application, JobListing, EmployerProfile, User } from '../models/index.js';
 import { sendSuccess, sendError } from '../utils/response.utils.js';
 
 export const applyToJob = async (req, res, next) => {
   try {
-    const job = await Job.findByPk(req.params.jobId);
-    if (!job || !job.isActive) return sendError(res, 'Job not found or no longer active.', 404);
+    const job = await JobListing.findByPk(req.params.jobId);
+    if (!job || job.status !== 'active') return sendError(res, 'Job not found or no longer active.', 404);
 
     const existing = await Application.findOne({
-      where: { jobId: req.params.jobId, userId: req.user.id },
+      where: { jobId: req.params.jobId, seekerId: req.user.id },
     });
     if (existing) return sendError(res, 'You have already applied to this job.', 409);
 
     const application = await Application.create({
       jobId: req.params.jobId,
-      userId: req.user.id,
+      seekerId: req.user.id,
       coverLetter: req.body.coverLetter,
-      resumeUrl: req.body.resumeUrl,
+      resumeId: req.body.resumeId || null,
     });
 
     sendSuccess(res, { application }, 'Application submitted.', 201);
@@ -27,16 +27,16 @@ export const applyToJob = async (req, res, next) => {
 export const getMyApplications = async (req, res, next) => {
   try {
     const applications = await Application.findAll({
-      where: { userId: req.user.id },
+      where: { seekerId: req.user.id },
       include: [
         {
-          model: Job,
+          model: JobListing,
           as: 'job',
           include: [
             {
-              model: Company,
-              as: 'company',
-              attributes: ['id', 'name', 'logoUrl', 'location'],
+              model: EmployerProfile,
+              as: 'employer',
+              attributes: ['id', 'companyName', 'companySlug', 'logoUrl'],
             },
           ],
         },
@@ -51,18 +51,18 @@ export const getMyApplications = async (req, res, next) => {
 
 export const getJobApplications = async (req, res, next) => {
   try {
-    const job = await Job.findByPk(req.params.jobId, {
-      include: [{ model: Company, as: 'company' }],
+    const job = await JobListing.findByPk(req.params.jobId, {
+      include: [{ model: EmployerProfile, as: 'employer' }],
     });
     if (!job) return sendError(res, 'Job not found.', 404);
-    if (job.company.userId !== req.user.id && req.user.role !== 'admin') {
+    if (job.employer.userId !== req.user.id && req.user.role !== 'admin') {
       return sendError(res, 'Not authorised.', 403);
     }
 
     const applications = await Application.findAll({
       where: { jobId: req.params.jobId },
       include: [
-        { model: User, as: 'applicant', attributes: ['id', 'firstName', 'lastName', 'email', 'avatarUrl'] },
+        { model: User, as: 'seeker', attributes: ['id', 'fullName', 'email'] },
       ],
       order: [['createdAt', 'DESC']],
     });
@@ -75,16 +75,16 @@ export const getJobApplications = async (req, res, next) => {
 export const updateApplicationStatus = async (req, res, next) => {
   try {
     const application = await Application.findByPk(req.params.id, {
-      include: [{ model: Job, as: 'job', include: [{ model: Company, as: 'company' }] }],
+      include: [{ model: JobListing, as: 'job', include: [{ model: EmployerProfile, as: 'employer' }] }],
     });
     if (!application) return sendError(res, 'Application not found.', 404);
-    if (application.job.company.userId !== req.user.id && req.user.role !== 'admin') {
+    if (application.job.employer.userId !== req.user.id && req.user.role !== 'admin') {
       return sendError(res, 'Not authorised.', 403);
     }
 
-    const { status, employerNotes } = req.body;
-    await application.update({ status, employerNotes });
-    sendSuccess(res, { application }, 'Application status updated.');
+    const { atsStage, employerRating, employerNotes } = req.body;
+    await application.update({ atsStage, employerRating, employerNotes });
+    sendSuccess(res, { application }, 'Application updated.');
   } catch (err) {
     next(err);
   }
