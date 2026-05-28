@@ -1,21 +1,13 @@
 import { Op } from 'sequelize';
-import { Job, Company, User, Application } from '../models/index.js';
+import { JobListing, EmployerProfile, User, Application } from '../models/index.js';
 import { sendSuccess, sendError } from '../utils/response.utils.js';
 
 export const getAllJobs = async (req, res, next) => {
   try {
-    const {
-      page = 1,
-      limit = 10,
-      search,
-      jobType,
-      experienceLevel,
-      location,
-      category,
-    } = req.query;
+    const { page = 1, limit = 10, search, jobType, workMode, experienceLevel, location } = req.query;
 
     const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
-    const where = { isActive: true };
+    const where = { status: 'active' };
 
     if (search) {
       where[Op.or] = [
@@ -24,17 +16,17 @@ export const getAllJobs = async (req, res, next) => {
       ];
     }
     if (jobType) where.jobType = jobType;
+    if (workMode) where.workMode = workMode;
     if (experienceLevel) where.experienceLevel = experienceLevel;
     if (location) where.location = { [Op.iLike]: `%${location}%` };
-    if (category) where.category = category;
 
-    const { count, rows: jobs } = await Job.findAndCountAll({
+    const { count, rows: jobs } = await JobListing.findAndCountAll({
       where,
       include: [
         {
-          model: Company,
-          as: 'company',
-          attributes: ['id', 'name', 'logoUrl', 'location', 'industry'],
+          model: EmployerProfile,
+          as: 'employer',
+          attributes: ['id', 'companyName', 'companySlug', 'logoUrl', 'industry'],
         },
       ],
       order: [['createdAt', 'DESC']],
@@ -58,18 +50,20 @@ export const getAllJobs = async (req, res, next) => {
 
 export const getJobById = async (req, res, next) => {
   try {
-    const job = await Job.findByPk(req.params.id, {
+    const job = await JobListing.findByPk(req.params.id, {
       include: [
         {
-          model: Company,
-          as: 'company',
-          attributes: ['id', 'name', 'logoUrl', 'website', 'description', 'location', 'industry', 'companySize'],
-          include: [{ model: User, as: 'owner', attributes: ['id', 'email'] }],
+          model: EmployerProfile,
+          as: 'employer',
+          attributes: ['id', 'companyName', 'companySlug', 'logoUrl', 'websiteUrl', 'industry', 'companySize'],
+          include: [{ model: User, as: 'user', attributes: ['id', 'email'] }],
         },
       ],
     });
 
     if (!job) return sendError(res, 'Job not found.', 404);
+
+    await job.increment('viewsCount');
     sendSuccess(res, { job });
   } catch (err) {
     next(err);
@@ -78,10 +72,10 @@ export const getJobById = async (req, res, next) => {
 
 export const createJob = async (req, res, next) => {
   try {
-    const company = await Company.findOne({ where: { userId: req.user.id } });
-    if (!company) return sendError(res, 'Create a company profile first.', 400);
+    const employer = await EmployerProfile.findOne({ where: { userId: req.user.id } });
+    if (!employer) return sendError(res, 'Create a company profile first.', 400);
 
-    const job = await Job.create({ ...req.body, companyId: company.id });
+    const job = await JobListing.create({ ...req.body, employerId: employer.id });
     sendSuccess(res, { job }, 'Job posted successfully.', 201);
   } catch (err) {
     next(err);
@@ -90,11 +84,11 @@ export const createJob = async (req, res, next) => {
 
 export const updateJob = async (req, res, next) => {
   try {
-    const job = await Job.findByPk(req.params.id, {
-      include: [{ model: Company, as: 'company' }],
+    const job = await JobListing.findByPk(req.params.id, {
+      include: [{ model: EmployerProfile, as: 'employer' }],
     });
     if (!job) return sendError(res, 'Job not found.', 404);
-    if (job.company.userId !== req.user.id && req.user.role !== 'admin') {
+    if (job.employer.userId !== req.user.id && req.user.role !== 'admin') {
       return sendError(res, 'Not authorised.', 403);
     }
     await job.update(req.body);
@@ -106,11 +100,11 @@ export const updateJob = async (req, res, next) => {
 
 export const deleteJob = async (req, res, next) => {
   try {
-    const job = await Job.findByPk(req.params.id, {
-      include: [{ model: Company, as: 'company' }],
+    const job = await JobListing.findByPk(req.params.id, {
+      include: [{ model: EmployerProfile, as: 'employer' }],
     });
     if (!job) return sendError(res, 'Job not found.', 404);
-    if (job.company.userId !== req.user.id && req.user.role !== 'admin') {
+    if (job.employer.userId !== req.user.id && req.user.role !== 'admin') {
       return sendError(res, 'Not authorised.', 403);
     }
     await job.destroy();
@@ -122,11 +116,11 @@ export const deleteJob = async (req, res, next) => {
 
 export const getCompanyJobs = async (req, res, next) => {
   try {
-    const company = await Company.findOne({ where: { userId: req.user.id } });
-    if (!company) return sendError(res, 'Company profile not found.', 404);
+    const employer = await EmployerProfile.findOne({ where: { userId: req.user.id } });
+    if (!employer) return sendError(res, 'Company profile not found.', 404);
 
-    const jobs = await Job.findAll({
-      where: { companyId: company.id },
+    const jobs = await JobListing.findAll({
+      where: { employerId: employer.id },
       order: [['createdAt', 'DESC']],
     });
     sendSuccess(res, { jobs });

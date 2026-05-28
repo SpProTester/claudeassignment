@@ -9,8 +9,7 @@ const router = Router();
 router.post(
   '/register',
   [
-    body('firstName').trim().notEmpty().withMessage('First name is required.').isLength({ min: 2 }),
-    body('lastName').trim().notEmpty().withMessage('Last name is required.'),
+    body('fullName').trim().notEmpty().withMessage('Full name is required.').isLength({ min: 2, max: 200 }),
     body('email').isEmail().normalizeEmail().withMessage('Valid email required.'),
     body('password')
       .isLength({ min: 8 })

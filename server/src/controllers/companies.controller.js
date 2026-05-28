@@ -1,4 +1,4 @@
-import { Company } from '../models/index.js';
+import { EmployerProfile } from '../models/index.js';
 import { sendSuccess, sendError } from '../utils/response.utils.js';
 
 export const getAllCompanies = async (req, res, next) => {
@@ -6,9 +6,9 @@ export const getAllCompanies = async (req, res, next) => {
     const { page = 1, limit = 12 } = req.query;
     const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
 
-    const { count, rows: companies } = await Company.findAndCountAll({
-      attributes: ['id', 'name', 'logoUrl', 'industry', 'location', 'companySize', 'isVerified'],
-      order: [['name', 'ASC']],
+    const { count, rows: companies } = await EmployerProfile.findAndCountAll({
+      attributes: ['id', 'companyName', 'companySlug', 'logoUrl', 'industry', 'companySize', 'isVerified'],
+      order: [['companyName', 'ASC']],
       limit: parseInt(limit, 10),
       offset,
     });
@@ -28,7 +28,7 @@ export const getAllCompanies = async (req, res, next) => {
 
 export const getCompanyById = async (req, res, next) => {
   try {
-    const company = await Company.findByPk(req.params.id);
+    const company = await EmployerProfile.findByPk(req.params.id);
     if (!company) return sendError(res, 'Company not found.', 404);
     sendSuccess(res, { company });
   } catch (err) {
@@ -38,10 +38,10 @@ export const getCompanyById = async (req, res, next) => {
 
 export const createCompany = async (req, res, next) => {
   try {
-    const existing = await Company.findOne({ where: { userId: req.user.id } });
+    const existing = await EmployerProfile.findOne({ where: { userId: req.user.id } });
     if (existing) return sendError(res, 'You already have a company profile.', 409);
 
-    const company = await Company.create({ ...req.body, userId: req.user.id });
+    const company = await EmployerProfile.create({ ...req.body, userId: req.user.id });
     sendSuccess(res, { company }, 'Company created.', 201);
   } catch (err) {
     next(err);
@@ -50,7 +50,7 @@ export const createCompany = async (req, res, next) => {
 
 export const updateCompany = async (req, res, next) => {
   try {
-    const company = await Company.findByPk(req.params.id);
+    const company = await EmployerProfile.findByPk(req.params.id);
     if (!company) return sendError(res, 'Company not found.', 404);
     if (company.userId !== req.user.id && req.user.role !== 'admin') {
       return sendError(res, 'Not authorised.', 403);
@@ -64,7 +64,7 @@ export const updateCompany = async (req, res, next) => {
 
 export const getMyCompany = async (req, res, next) => {
   try {
-    const company = await Company.findOne({ where: { userId: req.user.id } });
+    const company = await EmployerProfile.findOne({ where: { userId: req.user.id } });
     if (!company) return sendError(res, 'No company profile found.', 404);
     sendSuccess(res, { company });
   } catch (err) {
