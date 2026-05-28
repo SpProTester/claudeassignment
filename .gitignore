@@ -69,3 +69,7 @@ tmp/
 temp/
 *.tmp
 *.bak
+*.err
+
+# Uploaded user files — never commit binary uploads
+uploads/
