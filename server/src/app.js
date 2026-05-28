@@ -3,8 +3,10 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 import router from './routes/index.js';
 import { errorHandler } from './middleware/error.middleware.js';
+import { UPLOADS_ROOT } from './config/paths.js';
 
 const app = express();
 
@@ -35,9 +37,18 @@ app.use(
   })
 );
 
+// Cookie parser (required for httpOnly refresh token)
+app.use(cookieParser());
+
 // Body parsers
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
+// Serve uploaded resumes — token auth happens at the API layer; the static
+// route is intentionally unauthenticated so browsers can load files directly
+// via a signed URL pattern in future. Lock this down with auth middleware if
+// resumes must stay private.
+app.use('/uploads', express.static(UPLOADS_ROOT));
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));

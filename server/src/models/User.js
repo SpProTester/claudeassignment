@@ -35,6 +35,18 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
       },
+      refreshToken: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      passwordResetOtp: {
+        type: DataTypes.STRING(6),
+        allowNull: true,
+      },
+      passwordResetOtpExpiry: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
     },
     {
       tableName: 'users',
@@ -61,6 +73,9 @@ export default (sequelize, DataTypes) => {
       otherKey: 'skillId',
       as: 'skills',
     });
+    User.hasMany(models.Experience, { foreignKey: 'seekerId', as: 'experiences' });
+    User.hasMany(models.Education, { foreignKey: 'seekerId', as: 'educations' });
+    User.hasMany(models.Certification, { foreignKey: 'seekerId', as: 'certifications' });
   };
 
   return User;

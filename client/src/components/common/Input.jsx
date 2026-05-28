@@ -1,11 +1,9 @@
-export default function Input({
-  label,
-  error,
-  id,
-  className = '',
-  required,
-  ...props
-}) {
+import { forwardRef } from 'react';
+
+const Input = forwardRef(function Input(
+  { label, error, id, className = '', required, ...props },
+  ref
+) {
   return (
     <div className="space-y-1">
       {label && (
@@ -15,8 +13,11 @@ export default function Input({
         </label>
       )}
       <input
+        ref={ref}
         id={id}
-        className={`input-field ${error ? 'border-red-400 focus:ring-red-500 focus:border-red-500' : ''} ${className}`}
+        className={`input-field ${
+          error ? 'border-red-400 focus:ring-red-500 focus:border-red-500' : ''
+        } ${className}`}
         aria-describedby={error ? `${id}-error` : undefined}
         aria-invalid={!!error}
         {...props}
@@ -28,4 +29,6 @@ export default function Input({
       )}
     </div>
   );
-}
+});
+
+export default Input;

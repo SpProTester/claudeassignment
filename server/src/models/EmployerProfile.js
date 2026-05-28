@@ -46,6 +46,11 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
+      subscriptionPlan: {
+        type: DataTypes.ENUM('free', 'basic', 'premium'),
+        allowNull: false,
+        defaultValue: 'free',
+      },
     },
     {
       tableName: 'employer_profiles',

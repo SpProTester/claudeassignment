@@ -12,6 +12,9 @@ import defineSeekerSkill from './SeekerSkill.js';
 import defineSavedJob from './SavedJob.js';
 import defineJobAlert from './JobAlert.js';
 import defineNotification from './Notification.js';
+import defineExperience from './Experience.js';
+import defineEducation from './Education.js';
+import defineCertification from './Certification.js';
 
 export const sequelize = new Sequelize(
   dbConfig.database,
@@ -39,6 +42,9 @@ export const SeekerSkill = defineSeekerSkill(sequelize, DataTypes);
 export const SavedJob = defineSavedJob(sequelize, DataTypes);
 export const JobAlert = defineJobAlert(sequelize, DataTypes);
 export const Notification = defineNotification(sequelize, DataTypes);
+export const Experience = defineExperience(sequelize, DataTypes);
+export const Education = defineEducation(sequelize, DataTypes);
+export const Certification = defineCertification(sequelize, DataTypes);
 
 const models = {
   User,
@@ -53,6 +59,9 @@ const models = {
   SavedJob,
   JobAlert,
   Notification,
+  Experience,
+  Education,
+  Certification,
 };
 
 Object.values(models).forEach((model) => {

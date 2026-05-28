@@ -30,7 +30,7 @@ export default (sequelize, DataTypes) => {
         allowNull: true,
       },
       atsStage: {
-        type: DataTypes.ENUM('applied', 'screening', 'interview', 'offer', 'hired', 'rejected'),
+        type: DataTypes.ENUM('applied', 'screening', 'reviewing', 'shortlisted', 'interview', 'offer', 'hired', 'rejected'),
         allowNull: false,
         defaultValue: 'applied',
       },

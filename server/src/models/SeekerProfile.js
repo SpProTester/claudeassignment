@@ -41,6 +41,11 @@ export default (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: 'public',
       },
+      profileViews: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        validate: { min: 0 },
+      },
     },
     {
       tableName: 'seeker_profiles',
