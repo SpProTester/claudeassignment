@@ -1,287 +1,71 @@
 # =============================================================================
-# JOB PORTAL — ENTERPRISE .gitignore
-# Covers: Node.js, Next.js, Supabase, Turbo, Vercel, OS, IDE, Security
+# JOB PORTAL — .gitignore
 # =============================================================================
 
-# -----------------------------------------------------------------------------
-# DEPENDENCIES
-# -----------------------------------------------------------------------------
+# Dependencies
 node_modules/
 .pnp
 .pnp.js
-.yarn/install-state.gz
 
-# -----------------------------------------------------------------------------
-# NEXT.JS
-# -----------------------------------------------------------------------------
-.next/
-out/
-build/
+# Build outputs
 dist/
-.next-static/
+build/
+out/
 
-# Next.js cache
-.next/cache/
-
-# Vercel
-.vercel/
-.vercel
-
-# -----------------------------------------------------------------------------
-# TURBO
-# -----------------------------------------------------------------------------
-.turbo/
-**/.turbo/
-
-# -----------------------------------------------------------------------------
-# ENVIRONMENT VARIABLES — NEVER COMMIT SECRETS
-# -----------------------------------------------------------------------------
+# Environment variables — NEVER commit secrets
 .env
 .env.local
 .env.development
-.env.development.local
-.env.test
-.env.test.local
-.env.staging
-.env.staging.local
 .env.production
-.env.production.local
 .env.*.local
-
-# Keep example env files committed
 !.env.example
-!.env.*.example
 
-# Supabase local config (contains credentials)
-supabase/.env
-supabase/.env.local
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
 
-# -----------------------------------------------------------------------------
-# SUPABASE
-# -----------------------------------------------------------------------------
-# Local Supabase docker volumes
-supabase/.branches/
-supabase/docker/volumes/
-
-# Supabase generated types (generated, not source of truth)
-# Uncomment if you generate types locally and don't commit them:
-# packages/types/src/database.types.ts
-
-# -----------------------------------------------------------------------------
-# TESTING
-# -----------------------------------------------------------------------------
+# Cache / generated
+.eslintcache
+.prettiercache
 coverage/
 .nyc_output/
 *.lcov
-test-results/
-playwright-report/
-playwright/.cache/
-/e2e/test-results/
-/e2e/playwright-report/
 
-# -----------------------------------------------------------------------------
-# BUILD OUTPUTS
-# -----------------------------------------------------------------------------
-*.tsbuildinfo
-tsconfig.tsbuildinfo
-**/*.tsbuildinfo
-
-# ESLint cache
-.eslintcache
-**/.eslintcache
-
-# Prettier cache
-.prettiercache
-**/.prettiercache
-
-# Stylelint cache
-.stylelintcache
-
-# -----------------------------------------------------------------------------
-# PACKAGE MANAGER LOCKS (keep only pnpm-lock)
-# -----------------------------------------------------------------------------
-package-lock.json
-yarn.lock
-bun.lockb
-
-# Keep pnpm lock
-!pnpm-lock.yaml
-
-# -----------------------------------------------------------------------------
-# OS GENERATED
-# -----------------------------------------------------------------------------
-# macOS
+# OS generated
 .DS_Store
 .DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-.AppleDouble
-.LSOverride
-Icon
-
-# Windows
 Thumbs.db
-Thumbs.db:encdata
 Desktop.ini
 $RECYCLE.BIN/
-*.cab
-*.msi
-*.msix
-*.msm
-*.msp
-*.lnk
-ehthumbs.db
-ehthumbs_vista.db
 
-# Linux
-*~
-
-# -----------------------------------------------------------------------------
-# IDE & EDITORS
-# -----------------------------------------------------------------------------
-# VS Code (keep .vscode/settings.json for shared config, ignore user-specific)
+# IDE
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
 !.vscode/launch.json
-!.vscode/tasks.json
-
-# JetBrains IDEs
 .idea/
-*.iml
-*.iws
-*.ipr
 
-# Vim
-*.swp
-*.swo
-*.swn
-[._]*.s[a-v][a-z]
-[._]*.sw[a-p]
-[._]s[a-rt-v][a-z]
-[._]ss[a-gi-z]
-[._]sw[a-p]
-Session.vim
-Sessionx.vim
-.netrwhist
-*~
-tags
-[._]*.un~
+# Vite
+*.local
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
 
-# Emacs
-*~
-\#*\#
-/.emacs.desktop
-/.emacs.desktop.lock
-*.elc
-auto-save-list
-tramp
-.\#*
-
-# -----------------------------------------------------------------------------
-# LOGS
-# -----------------------------------------------------------------------------
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-.pnpm-debug.log*
-
-# Runtime data
-pids/
-*.pid
-*.seed
-*.pid.lock
-
-# -----------------------------------------------------------------------------
-# SECURITY & SENSITIVE FILES
-# -----------------------------------------------------------------------------
-# Private keys
-*.pem
-*.key
-*.p12
-*.pfx
-*.cer
-*.crt
-
-# SSH keys
-id_rsa
-id_rsa.pub
-id_dsa
-id_dsa.pub
-id_ecdsa
-id_ecdsa.pub
-id_ed25519
-id_ed25519.pub
-
-# AWS credentials
-.aws/
-credentials
-
-# Service account keys
-service-account*.json
-*-service-account.json
-gcloud-service-key.json
-
-# Stripe webhook secrets
-.stripe/
-
-# -----------------------------------------------------------------------------
-# DATABASE
-# -----------------------------------------------------------------------------
+# Database
 *.sqlite
 *.sqlite3
 *.db
-*.db-shm
-*.db-wal
 
-# Prisma migrations (if used alongside Drizzle)
-prisma/dev.db
-prisma/dev.db-journal
+# Secrets / certs
+*.pem
+*.key
+*.p12
+id_rsa
+id_rsa.pub
 
-# -----------------------------------------------------------------------------
-# STORYBOOK
-# -----------------------------------------------------------------------------
-storybook-static/
-.storybook/cache/
-
-# -----------------------------------------------------------------------------
-# MISC BUILD ARTIFACTS
-# -----------------------------------------------------------------------------
-# Sentry source maps
-.sentryclirc
-
-# Bundle analyzer
-.next/analyze/
-
-# Lighthouse CI
-.lighthouseci/
-
-# Chromatic
-.chromatic/
-
-# SWC
-.swc/
-
-# -----------------------------------------------------------------------------
-# TEMPORARY & GENERATED
-# -----------------------------------------------------------------------------
+# Temp
 tmp/
 temp/
-.tmp/
-.temp/
 *.tmp
-*.temp
 *.bak
-*.backup
-*.orig
-
-# Generated docs
-docs/api/generated/
-
-# Type generation output (if not committed)
-# packages/types/generated/

@@ -1,48 +1,22 @@
 {
   "name": "job-portal",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
-  "description": "Enterprise Job Portal & Recruitment Platform — Monster.com / LinkedIn / Indeed inspired",
+  "description": "Full-stack Job Portal — React 18 + Vite + Express + PostgreSQL + Sequelize",
   "engines": {
-    "node": ">=20.0.0",
-    "pnpm": ">=9.0.0"
+    "node": ">=20.0.0"
   },
-  "packageManager": "pnpm@9.1.0",
   "scripts": {
-    "prepare": "husky",
-    "lint": "turbo run lint",
-    "lint:fix": "turbo run lint:fix",
-    "format": "turbo run format",
-    "format:check": "turbo run format:check",
-    "type-check": "turbo run type-check",
-    "test": "turbo run test",
-    "test:coverage": "turbo run test:coverage",
-    "build": "turbo run build",
-    "dev": "turbo run dev --parallel",
-    "clean": "turbo run clean && rm -rf node_modules",
-    "release": "semantic-release",
-    "commit": "git-cz"
+    "dev": "concurrently --names CLIENT,SERVER --prefix-colors cyan,yellow \"npm run dev --prefix client\" \"npm run dev --prefix server\"",
+    "dev:client": "npm run dev --prefix client",
+    "dev:server": "npm run dev --prefix server",
+    "install:all": "npm install && npm install --prefix client && npm install --prefix server",
+    "build": "npm run build --prefix client",
+    "lint": "npm run lint --prefix client && npm run lint --prefix server",
+    "format": "prettier --write \"**/*.{js,jsx,json,css,md}\" --ignore-path .gitignore"
   },
   "devDependencies": {
-    "@commitlint/cli": "^19.3.0",
-    "@commitlint/config-conventional": "^19.2.2",
-    "@semantic-release/changelog": "^6.0.3",
-    "@semantic-release/git": "^10.0.1",
-    "@semantic-release/github": "^10.0.4",
-    "commitizen": "^4.3.0",
-    "cz-conventional-changelog": "^3.3.0",
-    "husky": "^9.0.11",
-    "lint-staged": "^15.2.5",
-    "semantic-release": "^24.0.0",
-    "turbo": "^2.0.9"
-  },
-  "config": {
-    "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
-    }
-  },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ]
+    "concurrently": "^8.2.2",
+    "prettier": "^3.3.2"
+  }
 }
