@@ -1,5 +1,7 @@
 import { Application, JobListing, EmployerProfile, User } from '../models/index.js';
 import { sendSuccess, sendError } from '../utils/response.utils.js';
+import { createNotification } from '../services/notification.service.js';
+import { sendApplicationReceivedEmail } from '../utils/email.utils.js';
 
 export const applyToJob = async (req, res, next) => {
   try {
@@ -17,6 +19,27 @@ export const applyToJob = async (req, res, next) => {
       coverLetter: req.body.coverLetter,
       resumeId: req.body.resumeId || null,
     });
+
+    // Notify employer about the new application (fire-and-forget)
+    EmployerProfile.findByPk(job.employerId, { attributes: ['userId', 'companyName'] })
+      .then(async (employer) => {
+        if (!employer) return;
+        const employerUser = await User.findByPk(employer.userId, { attributes: ['email', 'fullName'] });
+        if (!employerUser) return;
+        return createNotification(employer.userId, 'application_update', {
+          title: 'New Application Received',
+          body: `${req.user.fullName} applied for ${job.title}`,
+          metadata: { applicationId: application.id, jobId: job.id, seekerId: req.user.id },
+          email: () => sendApplicationReceivedEmail({
+            to: employerUser.email,
+            companyName: employer.companyName,
+            seekerName: req.user.fullName,
+            jobTitle: job.title,
+            applicationId: application.id,
+          }),
+        });
+      })
+      .catch((err) => console.error('[apply] Employer notification failed:', err.message));
 
     sendSuccess(res, { application }, 'Application submitted.', 201);
   } catch (err) {

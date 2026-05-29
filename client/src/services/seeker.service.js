@@ -58,4 +58,10 @@ export const seekerService = {
   // ── Skills catalogue ─────────────────────────────────────────────────────
   searchSkills: (q) =>
     api.get('/skills', { params: { search: q } }).then((r) => r.data),
+
+  // ── Job Alerts ───────────────────────────────────────────────────────────
+  listAlerts:  ()     => api.get(`${BASE}/alerts`),
+  createAlert: (data) => api.post(`${BASE}/alerts`, data),
+  deleteAlert: (id)   => api.delete(`${BASE}/alerts/${id}`),
+  toggleAlert: (id)   => api.put(`${BASE}/alerts/${id}/toggle`),
 };

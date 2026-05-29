@@ -5,6 +5,7 @@ import RoleRoute from '../components/common/RoleRoute.jsx';
 import Home from '../pages/Home.jsx';
 import Jobs from '../pages/Jobs.jsx';
 import JobDetail from '../pages/JobDetail.jsx';
+import CompanyProfile from '../pages/CompanyProfile.jsx';
 import Login from '../pages/Login.jsx';
 import Register from '../pages/Register.jsx';
 import ForgotPassword from '../pages/ForgotPassword.jsx';
@@ -17,6 +18,7 @@ import SeekerProfile from '../pages/seeker/SeekerProfile.jsx';
 import SeekerResume from '../pages/seeker/SeekerResume.jsx';
 import SeekerApplications from '../pages/seeker/SeekerApplications.jsx';
 import SeekerSavedJobs from '../pages/seeker/SeekerSavedJobs.jsx';
+import SeekerAlerts from '../pages/seeker/SeekerAlerts.jsx';
 import EmployerLayout from '../components/employer/EmployerLayout.jsx';
 import EmployerDashboard from '../pages/employer/EmployerDashboard.jsx';
 import EmployerJobs from '../pages/employer/EmployerJobs.jsx';
@@ -28,16 +30,17 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        {/* Public */}
+        {/* ── Public ──────────────────────────────────────── */}
         <Route index element={<Home />} />
-        <Route path="jobs" element={<Jobs />} />
-        <Route path="jobs/:id" element={<JobDetail />} />
-        <Route path="login" element={<Login />} />
-        <Route path="register" element={<Register />} />
-        <Route path="forgot-password" element={<ForgotPassword />} />
-        <Route path="reset-password" element={<ResetPassword />} />
+        <Route path="jobs"                element={<Jobs />} />
+        <Route path="jobs/:slug"          element={<JobDetail />} />
+        <Route path="companies/:slug"     element={<CompanyProfile />} />
+        <Route path="login"               element={<Login />} />
+        <Route path="register"            element={<Register />} />
+        <Route path="forgot-password"     element={<ForgotPassword />} />
+        <Route path="reset-password"      element={<ResetPassword />} />
 
-        {/* Authenticated — any role */}
+        {/* ── Authenticated — any role ─────────────────────── */}
         <Route
           path="dashboard"
           element={
@@ -47,7 +50,7 @@ export default function AppRoutes() {
           }
         />
 
-        {/* ── Employer dashboard ── */}
+        {/* ── Employer dashboard ────────────────────────────── */}
         <Route
           path="employer"
           element={
@@ -57,15 +60,15 @@ export default function AppRoutes() {
           }
         >
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard"              element={<EmployerDashboard />} />
-          <Route path="jobs"                   element={<EmployerJobs />} />
-          <Route path="jobs/new"               element={<JobForm />} />
-          <Route path="jobs/:id/edit"          element={<JobForm />} />
-          <Route path="jobs/:id/applicants"    element={<ApplicantsBoard />} />
-          <Route path="company"                element={<EmployerCompany />} />
+          <Route path="dashboard"           element={<EmployerDashboard />} />
+          <Route path="jobs"                element={<EmployerJobs />} />
+          <Route path="jobs/new"            element={<JobForm />} />
+          <Route path="jobs/:id/edit"       element={<JobForm />} />
+          <Route path="jobs/:id/applicants" element={<ApplicantsBoard />} />
+          <Route path="company"             element={<EmployerCompany />} />
         </Route>
 
-        {/* ── Seeker dashboard ── */}
+        {/* ── Seeker dashboard ──────────────────────────────── */}
         <Route
           path="seeker"
           element={
@@ -80,6 +83,7 @@ export default function AppRoutes() {
           <Route path="resume"       element={<SeekerResume />} />
           <Route path="applications" element={<SeekerApplications />} />
           <Route path="saved-jobs"   element={<SeekerSavedJobs />} />
+          <Route path="alerts"       element={<SeekerAlerts />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

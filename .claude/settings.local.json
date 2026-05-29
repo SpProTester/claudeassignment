@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(cd \"e:\\\\Monster\"; git init; echo \"EXIT: $LASTEXITCODE\")"
+      "PowerShell(cd \"e:\\\\Monster\"; git init; echo \"EXIT: $LASTEXITCODE\")",
+      "PowerShell(Invoke-RestMethod -Uri \"http://localhost:5000/health\")",
+      "Bash(npm install *)",
+      "PowerShell(Invoke-RestMethod -Uri \"http://localhost:5000/api/auth/forgot-password\" -Method POST -ContentType \"application/json\" -Body '{\"email\":\"test@example.com\"}')",
+      "PowerShell(Get-Process -Name \"node\" -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Force)"
     ]
   }
 }

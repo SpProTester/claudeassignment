@@ -1,7 +1,10 @@
 import 'dotenv/config';
+import { createServer } from 'node:http';
 import app from './app.js';
 import { sequelize } from './models/index.js';
 import { startJobExpiryCron } from './services/job-expiry.cron.js';
+import { startJobAlertCron } from './services/job-alert.cron.js';
+import { initSocket } from './socket.js';
 
 const PORT = process.env.PORT || 5000;
 
@@ -10,17 +13,15 @@ const start = async () => {
     await sequelize.authenticate();
     console.log('Database connection established.');
 
-    // Sync models in development (use migrations in production)
-    if (process.env.NODE_ENV === 'development') {
-      await sequelize.sync({ alter: true });
-      console.log('Models synced.');
-    }
+    const httpServer = createServer(app);
+    initSocket(httpServer);
 
-    app.listen(PORT, () => {
+    httpServer.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT} [${process.env.NODE_ENV}]`);
     });
 
     startJobExpiryCron();
+    startJobAlertCron();
   } catch (err) {
     console.error('Failed to start server:', err);
     process.exit(1);

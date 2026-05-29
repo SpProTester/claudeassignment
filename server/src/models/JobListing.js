@@ -72,6 +72,12 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.DATE,
         allowNull: true,
       },
+      categoryId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: { model: 'job_categories', key: 'id' },
+        onDelete: 'SET NULL',
+      },
     },
     {
       tableName: 'job_listings',
@@ -90,6 +96,7 @@ export default (sequelize, DataTypes) => {
 
   JobListing.associate = (models) => {
     JobListing.belongsTo(models.EmployerProfile, { foreignKey: 'employerId', as: 'employer' });
+    JobListing.belongsTo(models.JobCategory, { foreignKey: 'categoryId', as: 'category' });
     JobListing.hasMany(models.Application, { foreignKey: 'jobId', as: 'applications' });
     JobListing.hasMany(models.SavedJob, { foreignKey: 'jobId', as: 'savedByUsers' });
     JobListing.belongsToMany(models.Skill, {

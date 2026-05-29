@@ -8,10 +8,10 @@ import {
   User,
   SeekerProfile,
   Resume,
-  Notification,
 } from '../models/index.js';
 import { sendSuccess, sendError } from '../utils/response.utils.js';
-import { sendApplicationStatusEmail, sendEmployerEmail } from '../utils/email.utils.js';
+import { sendApplicationStatusEmail, sendInterviewScheduledEmail, sendEmployerEmail } from '../utils/email.utils.js';
+import { createNotification } from '../services/notification.service.js';
 
 // All valid ATS stages (mirrors the ENUM after migration 0019)
 export const ATS_STAGES = [
@@ -148,27 +148,28 @@ export const updateAtsStage = async (req, res, next) => {
     const jobTitle = application.job.title;
     const companyName = application.job.employer.companyName;
 
-    // In-app notification (fire-and-forget on error; don't block the API response)
-    Notification.create({
-      userId: application.seekerId,
-      type: 'application_update',
+    // Resolve seeker once for both notification and email
+    const seeker = await User.findByPk(application.seekerId, { attributes: ['id', 'email', 'fullName'] }).catch(() => null);
+
+    createNotification(application.seekerId, 'application_update', {
       title: copy.title,
       body: `${copy.body} — ${jobTitle} at ${companyName}`,
-      data: {
-        applicationId: application.id,
-        jobId: application.jobId,
-        stage,
-        previousStage,
-      },
-    }).catch((err) => console.error('[ats] Notification create failed:', err.message));
-
-    // Email notification (non-blocking; a failed email must not fail the API)
-    User.findByPk(application.seekerId, { attributes: ['email', 'fullName'] })
-      .then((seeker) => {
-        if (!seeker) return;
-        return sendApplicationStatusEmail({ to: seeker.email, seekerName: seeker.fullName, jobTitle, companyName, stage, copy });
-      })
-      .catch((err) => console.error('[ats] Status email failed:', err.message));
+      metadata: { applicationId: application.id, jobId: application.jobId, stage, previousStage },
+      email: seeker
+        ? () => {
+            if (stage === 'interview') {
+              return sendInterviewScheduledEmail({
+                to: seeker.email,
+                seekerName: seeker.fullName,
+                jobTitle,
+                companyName,
+                applicationId: application.id,
+              });
+            }
+            return sendApplicationStatusEmail({ to: seeker.email, seekerName: seeker.fullName, jobTitle, companyName, stage, copy });
+          }
+        : null,
+    }).catch((err) => console.error('[ats] createNotification failed:', err.message));
 
     sendSuccess(res, { application }, `Stage updated to "${stage}".`);
   } catch (err) {

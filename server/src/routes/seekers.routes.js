@@ -19,6 +19,12 @@ import {
   deleteResume,
   setDefaultResume,
 } from '../controllers/resume.controller.js';
+import {
+  createAlert,
+  listAlerts,
+  deleteAlert,
+  toggleAlert,
+} from '../controllers/alerts.controller.js';
 import { resumeUpload } from '../middleware/upload.middleware.js';
 import { authenticateToken, authorizeRole } from '../middleware/auth.middleware.js';
 
@@ -53,5 +59,11 @@ router.post('/resume', resumeUpload, uploadResume);
 router.get('/resume', listResumes);
 router.delete('/resume/:id', deleteResume);
 router.put('/resume/:id/default', setDefaultResume);
+
+// Job alerts
+router.post('/alerts', createAlert);
+router.get('/alerts', listAlerts);
+router.delete('/alerts/:id', deleteAlert);
+router.put('/alerts/:id/toggle', toggleAlert);
 
 export default router;

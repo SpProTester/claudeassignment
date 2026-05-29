@@ -6,6 +6,7 @@ import companyRoutes from './companies.routes.js';
 import seekerRoutes from './seekers.routes.js';
 import employerJobsRoutes from './employer.jobs.routes.js';
 import atsRoutes from './ats.routes.js';
+import notificationsRoutes from './notifications.routes.js';
 
 const router = Router();
 
@@ -17,5 +18,6 @@ router.use('/seekers', seekerRoutes);
 // More-specific prefix first so /:id/applicants falls through to atsRoutes
 router.use('/employer/jobs', employerJobsRoutes);
 router.use('/employer', atsRoutes);
+router.use('/notifications', notificationsRoutes);
 
 export default router;

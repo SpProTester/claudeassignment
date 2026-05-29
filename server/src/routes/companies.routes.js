@@ -3,6 +3,7 @@ import { body } from 'express-validator';
 import {
   getAllCompanies,
   getCompanyById,
+  getCompanyBySlug,
   createCompany,
   updateCompany,
   getMyCompany,
@@ -12,9 +13,10 @@ import { validate } from '../middleware/validate.middleware.js';
 
 const router = Router();
 
-// Public
-router.get('/', getAllCompanies);
-router.get('/:id', getCompanyById);
+// Public — literal routes must come before /:id param route
+router.get('/',             getAllCompanies);
+router.get('/slug/:slug',   getCompanyBySlug);
+router.get('/:id',          getCompanyById);
 
 // Employer only
 router.use(protect, restrictTo('employer', 'admin'));
@@ -25,7 +27,7 @@ router.post(
   '/',
   [body('name').trim().notEmpty().withMessage('Company name is required.')],
   validate,
-  createCompany
+  createCompany,
 );
 
 router.patch('/:id', updateCompany);

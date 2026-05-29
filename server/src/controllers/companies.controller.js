@@ -62,6 +62,19 @@ export const updateCompany = async (req, res, next) => {
   }
 };
 
+export const getCompanyBySlug = async (req, res, next) => {
+  try {
+    const company = await EmployerProfile.findOne({
+      where: { companySlug: req.params.slug },
+      attributes: ['id', 'companyName', 'companySlug', 'logoUrl', 'websiteUrl', 'industry', 'companySize', 'isVerified'],
+    });
+    if (!company) return sendError(res, 'Company not found.', 404);
+    sendSuccess(res, { company });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const getMyCompany = async (req, res, next) => {
   try {
     const company = await EmployerProfile.findOne({ where: { userId: req.user.id } });
