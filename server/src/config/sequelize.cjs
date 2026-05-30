@@ -13,6 +13,9 @@ module.exports = {
     port: parseInt(process.env.DB_PORT, 10) || 5432,
     dialect: 'postgres',
     logging: false,
+    // Track which seeders have already run (same as migration tracking)
+    seederStorage: 'sequelize',
+    seederStorageTableName: 'SequelizeSeedMeta',
   },
   test: {
     username: process.env.DB_USER || 'postgres',

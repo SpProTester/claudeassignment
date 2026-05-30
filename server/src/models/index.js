@@ -5,6 +5,7 @@ import defineSeekerProfile from './SeekerProfile.js';
 import defineEmployerProfile from './EmployerProfile.js';
 import defineJobListing from './JobListing.js';
 import defineResume from './Resume.js';
+import defineResumeTemplate from './ResumeTemplate.js';
 import defineApplication from './Application.js';
 import defineSkill from './Skill.js';
 import defineJobSkill from './JobSkill.js';
@@ -17,6 +18,8 @@ import defineEducation from './Education.js';
 import defineCertification from './Certification.js';
 import defineJobCategory from './JobCategory.js';
 import defineSearchLog from './SearchLog.js';
+import defineBillingEvent from './BillingEvent.js';
+import defineAuditLog from './AuditLog.js';
 
 export const sequelize = new Sequelize(
   dbConfig.database,
@@ -31,11 +34,12 @@ export const sequelize = new Sequelize(
   }
 );
 
-// Define all models — Resume before Application (resumeId FK)
+// Define all models — ResumeTemplate before Resume (templateId FK), Resume before Application (resumeId FK)
 export const User = defineUser(sequelize, DataTypes);
 export const SeekerProfile = defineSeekerProfile(sequelize, DataTypes);
 export const EmployerProfile = defineEmployerProfile(sequelize, DataTypes);
 export const JobListing = defineJobListing(sequelize, DataTypes);
+export const ResumeTemplate = defineResumeTemplate(sequelize, DataTypes);
 export const Resume = defineResume(sequelize, DataTypes);
 export const Application = defineApplication(sequelize, DataTypes);
 export const Skill = defineSkill(sequelize, DataTypes);
@@ -49,12 +53,15 @@ export const Education = defineEducation(sequelize, DataTypes);
 export const Certification = defineCertification(sequelize, DataTypes);
 export const JobCategory = defineJobCategory(sequelize, DataTypes);
 export const SearchLog = defineSearchLog(sequelize, DataTypes);
+export const BillingEvent = defineBillingEvent(sequelize, DataTypes);
+export const AuditLog = defineAuditLog(sequelize, DataTypes);
 
 const models = {
   User,
   SeekerProfile,
   EmployerProfile,
   JobListing,
+  ResumeTemplate,
   Resume,
   Application,
   Skill,
@@ -68,6 +75,8 @@ const models = {
   Certification,
   JobCategory,
   SearchLog,
+  BillingEvent,
+  AuditLog,
 };
 
 Object.values(models).forEach((model) => {

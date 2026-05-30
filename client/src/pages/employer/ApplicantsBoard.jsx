@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -314,9 +314,8 @@ export default function ApplicantsBoard() {
   const { id: jobId } = useParams();
   const qc = useQueryClient();
 
-  const [columns, setColumns] = useState(() =>
-    Object.fromEntries(STAGES.map((s) => [s.id, []]))
-  );
+  // optimisticColumns is set during drag-and-drop only; cleared on refetch
+  const [optimisticColumns, setOptimisticColumns] = useState(null);
   const [activeCard, setActiveCard] = useState(null);
   const [overStage, setOverStage] = useState(null);
 
@@ -325,14 +324,16 @@ export default function ApplicantsBoard() {
   const [ratingTarget, setRatingTarget] = useState(null);
   const [emailTarget,  setEmailTarget]  = useState(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['employer', 'applicants', jobId],
-    queryFn: () => employerService.listApplicants(jobId, { limit: 200 }),
+    queryFn: () => employerService.listApplicants(jobId, { limit: 500 }),
     enabled: Boolean(jobId),
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
-  // Distribute applications into stage columns
-  useEffect(() => {
+  // Derive columns directly from server data — no useEffect, no stale local state
+  const serverColumns = useMemo(() => {
     const apps = data?.data?.applications ?? [];
     const cols = Object.fromEntries(STAGES.map((s) => [s.id, []]));
     apps.forEach((app) => {
@@ -340,7 +341,15 @@ export default function ApplicantsBoard() {
       if (cols[stage]) cols[stage].push(app);
       else cols.applied.push(app);
     });
-    setColumns(cols);
+    return cols;
+  }, [data]);
+
+  // Active columns: use optimistic override during DnD, server data otherwise
+  const columns = optimisticColumns ?? serverColumns;
+
+  // Clear optimistic state when fresh server data arrives
+  useEffect(() => {
+    setOptimisticColumns(null);
   }, [data]);
 
   const sensors = useSensors(
@@ -351,10 +360,14 @@ export default function ApplicantsBoard() {
   // Mutations
   const stageMutation = useMutation({
     mutationFn: ({ id, stage }) => employerService.updateStage(id, stage),
-    onSuccess: () => toast.success('Stage updated'),
+    onSuccess: () => {
+      toast.success('Stage updated');
+      // Refetch so optimistic state is replaced by server truth
+      qc.invalidateQueries({ queryKey: ['employer', 'applicants', jobId] });
+    },
     onError: (e) => {
       toast.error(e.message);
-      qc.invalidateQueries(['employer', 'applicants', jobId]);
+      setOptimisticColumns(null); // rollback to server data
     },
   });
 
@@ -402,13 +415,16 @@ export default function ApplicantsBoard() {
     }
     if (!srcStage || srcStage === newStage) return;
 
-    // Optimistic update
+    // Optimistic update — apply locally before server confirms
     const app = columns[srcStage].find((a) => a.id === appId);
-    setColumns((prev) => ({
-      ...prev,
-      [srcStage]: prev[srcStage].filter((a) => a.id !== appId),
-      [newStage]: [...prev[newStage], { ...app, atsStage: newStage }],
-    }));
+    setOptimisticColumns((prev) => {
+      const base = prev ?? serverColumns;
+      return {
+        ...base,
+        [srcStage]: base[srcStage].filter((a) => a.id !== appId),
+        [newStage]: [...base[newStage], { ...app, atsStage: newStage }],
+      };
+    });
 
     stageMutation.mutate({ id: appId, stage: newStage });
   }, [columns, stageMutation]);
@@ -433,13 +449,24 @@ export default function ApplicantsBoard() {
           <p className="text-xs text-gray-400 mt-0.5">Drag cards between columns to update ATS stage.</p>
         </div>
 
-        {/* Stage summary pills */}
-        <div className="flex flex-wrap gap-2">
+        {/* Stage summary pills + refresh */}
+        <div className="flex flex-wrap items-center gap-2">
           {STAGES.filter((s) => columns[s.id]?.length > 0).map((s) => (
             <span key={s.id} className={`badge ${atsStageColor(s.id)}`}>
               {s.label}: {columns[s.id].length}
             </span>
           ))}
+          <button
+            onClick={() => refetch()}
+            disabled={isLoading}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 border border-gray-200 hover:border-primary-300 hover:text-primary-600 transition-colors disabled:opacity-50"
+            title="Refresh applicants"
+          >
+            <svg className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+            Refresh
+          </button>
         </div>
       </div>
 
@@ -450,6 +477,12 @@ export default function ApplicantsBoard() {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <p className="text-red-500 font-medium mb-2">Failed to load applicants</p>
+          <p className="text-sm text-gray-400 mb-4">{error.message}</p>
+          <button onClick={() => refetch()} className="btn-primary text-sm">Retry</button>
         </div>
       ) : (
         <div className="overflow-x-auto pb-4">

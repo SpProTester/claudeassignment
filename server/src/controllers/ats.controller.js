@@ -85,7 +85,7 @@ export const listApplicants = async (req, res, next) => {
 
     const { atsStage, page = 1, limit = 20 } = req.query;
     const parsedPage  = Math.max(1, parseInt(page, 10));
-    const parsedLimit = Math.min(100, Math.max(1, parseInt(limit, 10)));
+    const parsedLimit = Math.min(500, Math.max(1, parseInt(limit, 10)));
     const offset = (parsedPage - 1) * parsedLimit;
 
     const where = { jobId: req.params.id };
@@ -239,12 +239,29 @@ export const streamResume = async (req, res, next) => {
     }
 
     const resume = await Resume.findByPk(application.resumeId, {
-      attributes: ['fileName', 'storagePath'],
+      attributes: ['id', 'fileName', 'storagePath', 'resumeType', 'resumeContent', 'label', 'templateId'],
     });
     if (!resume) return sendError(res, 'Resume record not found.', 404);
 
-    // storagePath is the absolute path written by multer (file.path)
-    if (!fs.existsSync(resume.storagePath)) {
+    if (resume.resumeType === 'built') {
+      // Dynamically generate a PDF from the stored resume content
+      const { default: PDFDocument } = await import('pdfkit');
+      const { buildPdfFromContent } = await import('./resume-builder.controller.js');
+
+      const content = resume.resumeContent ?? {};
+      const label   = resume.label || 'Resume';
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(label)}.pdf"`);
+
+      const doc = buildPdfFromContent(content);
+      doc.pipe(res);
+      doc.end();
+      return;
+    }
+
+    // Uploaded resume — serve the stored file
+    if (!resume.storagePath || !fs.existsSync(resume.storagePath)) {
       return sendError(res, 'Resume file is missing from storage.', 404);
     }
 

@@ -7,6 +7,8 @@ import seekerRoutes from './seekers.routes.js';
 import employerJobsRoutes from './employer.jobs.routes.js';
 import atsRoutes from './ats.routes.js';
 import notificationsRoutes from './notifications.routes.js';
+import paymentsRoutes from './payments.routes.js';
+import adminRoutes from './admin.routes.js';
 
 const router = Router();
 
@@ -19,5 +21,7 @@ router.use('/seekers', seekerRoutes);
 router.use('/employer/jobs', employerJobsRoutes);
 router.use('/employer', atsRoutes);
 router.use('/notifications', notificationsRoutes);
+router.use('/payments', paymentsRoutes);
+router.use('/admin', adminRoutes);
 
 export default router;
