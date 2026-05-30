@@ -34,7 +34,7 @@ export default function CompanyProfile() {
     retry: false,
   });
 
-  const company = companyData?.company;
+  const company = companyData?.data?.company;
 
   const { data: jobsData, isLoading: jobsLoading } = useQuery({
     queryKey:  ['company-jobs', slug],

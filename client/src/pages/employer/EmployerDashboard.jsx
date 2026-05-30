@@ -1,10 +1,11 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { employerService } from '../../services/employer.service.js';
 import { jobStatusColor, jobStatusLabel, timeAgo } from '../../utils/helpers.js';
 import StatsCard from '../../components/seeker/StatsCard.jsx';
+import { useBilling, PLAN_LIMITS } from '../../hooks/useBilling.js';
 
-// ── Icons ─────────────────────────────────────────────────────────────────────
 const icons = {
   jobs: (
     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
@@ -29,13 +30,13 @@ const icons = {
   ),
 };
 
-function Skeleton() {
+function JobRowSkeleton() {
   return (
     <div className="animate-pulse flex items-center gap-4 px-5 py-4">
-      <div className="w-9 h-9 bg-gray-100 rounded-lg shrink-0" />
+      <div className="w-10 h-10 bg-gray-100 rounded-2xl shrink-0" />
       <div className="flex-1 space-y-2">
-        <div className="h-3.5 bg-gray-100 rounded w-48" />
-        <div className="h-3 bg-gray-100 rounded w-28" />
+        <div className="h-3.5 bg-gray-100 rounded-lg w-48" />
+        <div className="h-3 bg-gray-100 rounded-lg w-28" />
       </div>
       <div className="h-5 bg-gray-100 rounded-full w-16" />
     </div>
@@ -43,9 +44,16 @@ function Skeleton() {
 }
 
 export default function EmployerDashboard() {
+  const [bannerDismissed, setBannerDismissed] = useState(
+    () => sessionStorage.getItem('upgrade-banner-dismissed') === 'true'
+  );
+
+  const { planId, isLoading: billingLoading } = useBilling();
+  const isFreePlan = !billingLoading && ['starter', 'free'].includes(planId);
+
   const { data, isLoading } = useQuery({
     queryKey: ['employer', 'jobs'],
-    queryFn: () => employerService.listJobs({ limit: 100 }),
+    queryFn:  () => employerService.listJobs({ limit: 100 }),
   });
 
   const jobs = data?.data?.jobs ?? [];
@@ -57,20 +65,63 @@ export default function EmployerDashboard() {
     draftJobs:       jobs.filter((j) => j.status === 'draft').length,
   };
 
-  // 6 most recent jobs for the activity feed
   const recentJobs = [...jobs]
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
     .slice(0, 6);
 
+  const activeJobCount = jobs.filter((j) => ['draft', 'active', 'paused'].includes(j.status)).length;
+  const jobLimit       = PLAN_LIMITS[planId] ?? 5;
+  const usagePct       = Math.min(100, Math.round((activeJobCount / jobLimit) * 100));
+
+  const topJob = [...jobs].sort((a, b) => (parseInt(b.applicationsCount, 10) || 0) - (parseInt(a.applicationsCount, 10) || 0))[0];
+
   return (
-    <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Overview of your hiring activity.</p>
+    <div className="space-y-6">
+      {/* Upgrade banner */}
+      {isFreePlan && !bannerDismissed && (
+        <div className="rounded-2xl overflow-hidden bg-gradient-to-r from-primary-600 to-primary-800 border border-primary-500 shadow-sm">
+          <div className="flex items-center justify-between gap-4 px-6 py-4">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-white">You&apos;re on the Starter plan</p>
+                <p className="text-xs text-primary-200 mt-0.5">
+                  {activeJobCount} of {jobLimit} job slots used · Upgrade to post unlimited jobs and unlock the full ATS
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="hidden sm:flex flex-col items-end gap-1">
+                <span className="text-xs text-primary-200">{usagePct}% used</span>
+                <div className="w-20 h-1.5 bg-white/20 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full transition-all ${usagePct >= 80 ? 'bg-amber-300' : 'bg-white'}`} style={{ width: `${usagePct}%` }} />
+                </div>
+              </div>
+              <Link to="/employer/billing" className="px-4 py-1.5 rounded-xl bg-white text-primary-700 text-xs font-bold hover:bg-primary-50 transition-colors shadow-sm">
+                Upgrade now
+              </Link>
+              <button onClick={() => { sessionStorage.setItem('upgrade-banner-dismissed', 'true'); setBannerDismissed(true); }}
+                className="p-1.5 rounded-lg text-primary-200 hover:text-white hover:bg-white/10 transition-colors">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
-        <Link to="/employer/jobs/new" className="btn-primary flex items-center gap-2 text-sm">
+      )}
+
+      {/* Page header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-extrabold text-gray-900">Employer Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Overview of your hiring activity</p>
+        </div>
+        <Link to="/employer/jobs/new" className="btn-primary flex items-center gap-2">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
@@ -78,47 +129,45 @@ export default function EmployerDashboard() {
         </Link>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatsCard label="Active Jobs"      value={stats.activeJobs}      icon={icons.jobs}       color="blue"   loading={isLoading} />
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatsCard label="Active Jobs"      value={stats.activeJobs}      icon={icons.jobs}       color="purple" loading={isLoading} />
         <StatsCard label="Total Applicants" value={stats.totalApplicants} icon={icons.applicants} color="green"  loading={isLoading} />
-        <StatsCard label="Total Views"      value={stats.totalViews}      icon={icons.views}      color="purple" loading={isLoading} />
+        <StatsCard label="Total Views"      value={stats.totalViews}      icon={icons.views}      color="blue"   loading={isLoading} />
         <StatsCard label="Draft Jobs"       value={stats.draftJobs}       icon={icons.draft}      color="orange" loading={isLoading} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-card overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900">Recent Jobs</h2>
-            <Link to="/employer/jobs" className="text-xs text-primary-600 hover:text-primary-700 font-medium">
+        {/* Recent jobs feed */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-card overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
+            <h2 className="font-bold text-gray-900">Recent Job Listings</h2>
+            <Link to="/employer/jobs" className="text-xs font-semibold text-primary-600 hover:text-primary-700">
               View all →
             </Link>
           </div>
 
           {isLoading ? (
-            <div className="divide-y divide-gray-100">
-              {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} />)}
+            <div className="divide-y divide-gray-50">
+              {Array.from({ length: 5 }).map((_, i) => <JobRowSkeleton key={i} />)}
             </div>
           ) : recentJobs.length === 0 ? (
-            <div className="text-center py-14">
-              <p className="text-3xl mb-3">📋</p>
-              <p className="text-sm font-semibold text-gray-800">No jobs posted yet</p>
-              <p className="text-xs text-gray-400 mt-1 mb-4">Post your first job to start receiving applications.</p>
-              <Link to="/employer/jobs/new" className="btn-primary text-xs">Post a Job</Link>
+            <div className="text-center py-16">
+              <div className="text-5xl mb-4">📋</div>
+              <p className="font-bold text-gray-900 mb-1">No jobs posted yet</p>
+              <p className="text-sm text-gray-500 mb-5">Post your first job to start receiving applications.</p>
+              <Link to="/employer/jobs/new" className="btn-primary text-sm">Post a Job</Link>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-gray-50">
               {recentJobs.map((job) => (
-                <div key={job.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors">
-                  <div className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center text-primary-600 font-bold text-sm shrink-0">
+                <div key={job.id} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
+                  <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-sm shrink-0">
                     {job.title?.[0]?.toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <Link
-                      to={`/employer/jobs/${job.id}/applicants`}
-                      className="text-sm font-semibold text-gray-900 hover:text-primary-600 truncate block"
-                    >
+                    <Link to={`/employer/jobs/${job.id}/applicants`}
+                      className="text-sm font-semibold text-gray-900 hover:text-primary-600 truncate block transition-colors">
                       {job.title}
                     </Link>
                     <p className="text-xs text-gray-400 mt-0.5">
@@ -134,61 +183,82 @@ export default function EmployerDashboard() {
           )}
         </div>
 
-        {/* Quick Actions */}
+        {/* Right sidebar */}
         <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-gray-200 shadow-card p-5">
-            <h2 className="font-semibold text-gray-900 mb-4">Quick Actions</h2>
+          {/* Quick actions */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+            <h2 className="font-bold text-gray-900 mb-4">Quick Actions</h2>
             <div className="space-y-2">
-              <Link
-                to="/employer/jobs/new"
-                className="flex items-center gap-3 p-3 rounded-lg border border-dashed border-primary-300 text-primary-600 hover:bg-primary-50 transition-colors text-sm font-medium"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <Link to="/employer/jobs/new"
+                className="flex items-center gap-3 p-3 rounded-xl border-2 border-dashed border-primary-200 text-primary-600 hover:bg-primary-50 hover:border-primary-400 transition-all text-sm font-semibold">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
                 Post a new job
               </Link>
-              <Link
-                to="/employer/jobs"
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors text-sm font-medium"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+              <Link to="/employer/jobs"
+                className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-gray-700 transition-colors text-sm font-medium">
+                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                 </svg>
                 Manage job listings
               </Link>
-              <Link
-                to="/employer/company"
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 text-gray-700 transition-colors text-sm font-medium"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+              <Link to="/employer/company"
+                className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-gray-700 transition-colors text-sm font-medium">
+                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
                 </svg>
                 Edit company profile
+              </Link>
+              <Link to="/employer/billing"
+                className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 text-gray-700 transition-colors text-sm font-medium">
+                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                </svg>
+                Billing & Plans
               </Link>
             </div>
           </div>
 
           {/* Top performing job */}
-          {jobs.length > 0 && (() => {
-            const top = [...jobs].sort((a, b) => (parseInt(b.applicationsCount, 10) || 0) - (parseInt(a.applicationsCount, 10) || 0))[0];
-            return (
-              <div className="bg-white rounded-xl border border-gray-200 shadow-card p-5">
-                <h2 className="font-semibold text-gray-900 mb-3 text-sm">Top Job by Applications</h2>
-                <p className="text-sm font-medium text-gray-800 truncate">{top.title}</p>
-                <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
-                  <span>{parseInt(top.applicationsCount, 10) || 0} applicants</span>
-                  <span>{top.viewsCount || 0} views</span>
-                </div>
-                <Link
-                  to={`/employer/jobs/${top.id}/applicants`}
-                  className="mt-3 block text-xs text-primary-600 hover:text-primary-700 font-medium"
-                >
-                  Review applicants →
-                </Link>
+          {!isLoading && topJob && (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-base">🏆</span>
+                <h2 className="font-bold text-gray-900 text-sm">Top Job by Applications</h2>
               </div>
-            );
-          })()}
+              <p className="text-sm font-semibold text-gray-900 truncate">{topJob.title}</p>
+              <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
+                <span className="flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>
+                  {parseInt(topJob.applicationsCount, 10) || 0} applicants
+                </span>
+                <span>{topJob.viewsCount || 0} views</span>
+              </div>
+              <Link to={`/employer/jobs/${topJob.id}/applicants`}
+                className="mt-3 text-xs font-semibold text-primary-600 hover:text-primary-700 flex items-center gap-1">
+                Review applicants
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+              </Link>
+            </div>
+          )}
+
+          {/* Plan card */}
+          {!billingLoading && (
+            <div className="bg-gradient-to-br from-primary-600 to-primary-800 rounded-2xl p-5 text-white">
+              <p className="text-xs font-bold text-primary-200 uppercase tracking-wider mb-1">Current Plan</p>
+              <p className="text-lg font-extrabold capitalize">{planId ?? 'Starter'}</p>
+              <div className="mt-2 flex items-center gap-2">
+                <div className="flex-1 h-1.5 bg-white/20 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${usagePct >= 80 ? 'bg-amber-300' : 'bg-white'}`} style={{ width: `${usagePct}%` }} />
+                </div>
+                <span className="text-xs text-primary-200">{activeJobCount}/{jobLimit}</span>
+              </div>
+              <Link to="/employer/billing" className="mt-4 block text-center py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-semibold transition-colors">
+                Manage Plan →
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -2,8 +2,16 @@ import { Op } from 'sequelize';
 import { sequelize, JobListing, EmployerProfile, Application, Skill } from '../models/index.js';
 import { sendSuccess, sendError } from '../utils/response.utils.js';
 
-// Active job limits per plan — Infinity means unlimited
-const PLAN_QUOTAS = { free: 5, basic: 20, premium: Infinity };
+// Active job limits per plan — Infinity means unlimited.
+// Legacy plan names (free/basic/premium) are kept for backward compatibility.
+const PLAN_QUOTAS = {
+  free: 5,
+  starter: 5,
+  basic: 20,
+  professional: 20,
+  premium: Infinity,
+  business: Infinity,
+};
 
 // Countable statuses — a job occupies a quota slot until closed/expired
 const QUOTA_STATUSES = ['draft', 'active', 'paused'];

@@ -12,6 +12,11 @@ export default (sequelize, DataTypes) => {
         allowNull: false,
         validate: { notEmpty: true },
       },
+      resultCount: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
       searchedAt: {
         type: DataTypes.DATE,
         allowNull: false,

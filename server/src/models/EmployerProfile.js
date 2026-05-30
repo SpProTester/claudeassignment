@@ -47,9 +47,25 @@ export default (sequelize, DataTypes) => {
         defaultValue: false,
       },
       subscriptionPlan: {
-        type: DataTypes.ENUM('free', 'basic', 'premium'),
+        type: DataTypes.ENUM('free', 'basic', 'premium', 'starter', 'professional', 'business'),
         allowNull: false,
         defaultValue: 'free',
+      },
+      stripeCustomerId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      stripeSubscriptionId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      subscriptionStatus: {
+        type: DataTypes.ENUM('active', 'canceled', 'past_due', 'trialing', 'at_risk'),
+        allowNull: true,
+      },
+      subscriptionCurrentPeriodEnd: {
+        type: DataTypes.DATE,
+        allowNull: true,
       },
     },
     {

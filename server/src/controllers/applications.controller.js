@@ -1,4 +1,4 @@
-import { Application, JobListing, EmployerProfile, User } from '../models/index.js';
+import { Application, JobListing, EmployerProfile, User, Resume } from '../models/index.js';
 import { sendSuccess, sendError } from '../utils/response.utils.js';
 import { createNotification } from '../services/notification.service.js';
 import { sendApplicationReceivedEmail } from '../utils/email.utils.js';
@@ -13,11 +13,30 @@ export const applyToJob = async (req, res, next) => {
     });
     if (existing) return sendError(res, 'You have already applied to this job.', 409);
 
+    // Resolve and validate the resume — a resume is required to apply.
+    let resolvedResumeId = req.body.resumeId || null;
+
+    if (resolvedResumeId) {
+      // Caller specified a resume — verify ownership.
+      const owned = await Resume.findOne({ where: { id: resolvedResumeId, seekerId: req.user.id } });
+      if (!owned) return sendError(res, 'Invalid resume selection.', 400);
+    } else {
+      // No resume specified — try default, then any.
+      const resume = await Resume.findOne({
+        where: { seekerId: req.user.id },
+        order: [['isDefault', 'DESC'], ['createdAt', 'DESC']],
+      });
+      if (!resume) {
+        return sendError(res, 'Please upload your resume before applying for jobs.', 400);
+      }
+      resolvedResumeId = resume.id;
+    }
+
     const application = await Application.create({
       jobId: req.params.jobId,
       seekerId: req.user.id,
       coverLetter: req.body.coverLetter,
-      resumeId: req.body.resumeId || null,
+      resumeId: resolvedResumeId,
     });
 
     // Notify employer about the new application (fire-and-forget)
@@ -90,6 +109,25 @@ export const getJobApplications = async (req, res, next) => {
       order: [['createdAt', 'DESC']],
     });
     sendSuccess(res, { applications });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// DELETE /api/applications/:id  — seeker withdraws their own application
+export const withdrawApplication = async (req, res, next) => {
+  try {
+    const application = await Application.findByPk(req.params.id);
+    if (!application) return sendError(res, 'Application not found.', 404);
+    if (application.seekerId !== req.user.id) return sendError(res, 'Not authorised.', 403);
+
+    const locked = ['hired', 'rejected'];
+    if (locked.includes(application.atsStage)) {
+      return sendError(res, `Cannot withdraw an application that has been ${application.atsStage}.`, 409);
+    }
+
+    await application.destroy();
+    sendSuccess(res, null, 'Application withdrawn successfully.');
   } catch (err) {
     next(err);
   }

@@ -20,24 +20,24 @@ export const timeAgo = (dateStr) => {
 
 export const jobTypeBadgeColor = (type) => {
   const map = {
-    'full-time': 'bg-blue-100 text-blue-700',
-    'part-time': 'bg-purple-100 text-purple-700',
-    'contract': 'bg-orange-100 text-orange-700',
-    'remote': 'bg-green-100 text-green-700',
-    'internship': 'bg-yellow-100 text-yellow-700',
+    'full-time':  'bg-primary-100 text-primary-700',
+    'part-time':  'bg-blue-100 text-blue-700',
+    'contract':   'bg-orange-100 text-orange-700',
+    'freelance':  'bg-yellow-100 text-yellow-700',
+    'internship': 'bg-pink-100 text-pink-700',
   };
-  return map[type] || 'bg-gray-100 text-gray-700';
+  return map[type] || 'bg-gray-100 text-gray-600';
 };
 
 export const applicationStatusColor = (status) => {
   const map = {
-    pending: 'bg-yellow-100 text-yellow-700',
-    reviewed: 'bg-blue-100 text-blue-700',
-    shortlisted: 'bg-indigo-100 text-indigo-700',
-    rejected: 'bg-red-100 text-red-700',
-    hired: 'bg-green-100 text-green-700',
+    pending:     'bg-yellow-100 text-yellow-700',
+    reviewed:    'bg-blue-100 text-blue-700',
+    shortlisted: 'bg-primary-100 text-primary-700',
+    rejected:    'bg-red-100 text-red-700',
+    hired:       'bg-green-100 text-green-700',
   };
-  return map[status] || 'bg-gray-100 text-gray-700';
+  return map[status] || 'bg-gray-100 text-gray-600';
 };
 
 export const truncate = (str, max = 120) =>
@@ -53,10 +53,7 @@ export const formatFileSize = (bytes) => {
 
 export const formatDate = (dateStr) => {
   if (!dateStr) return '';
-  return new Date(dateStr).toLocaleDateString('en-IN', {
-    year: 'numeric',
-    month: 'short',
-  });
+  return new Date(dateStr).toLocaleDateString('en-IN', { year: 'numeric', month: 'short' });
 };
 
 export const atsStageColor = (stage) => {
@@ -64,13 +61,13 @@ export const atsStageColor = (stage) => {
     applied:     'bg-blue-100 text-blue-700',
     screening:   'bg-yellow-100 text-yellow-800',
     reviewing:   'bg-yellow-100 text-yellow-800',
-    shortlisted: 'bg-indigo-100 text-indigo-700',
-    interview:   'bg-purple-100 text-purple-700',
+    shortlisted: 'bg-primary-100 text-primary-700',
+    interview:   'bg-indigo-100 text-indigo-700',
     offer:       'bg-teal-100 text-teal-700',
     hired:       'bg-green-100 text-green-700',
     rejected:    'bg-red-100 text-red-700',
   };
-  return map[stage] || 'bg-gray-100 text-gray-700';
+  return map[stage] || 'bg-gray-100 text-gray-600';
 };
 
 export const atsStageLabel = (stage) => {
@@ -92,16 +89,14 @@ export const jobStatusColor = (status) => {
     draft:   'bg-gray-100 text-gray-600',
     active:  'bg-green-100 text-green-700',
     paused:  'bg-yellow-100 text-yellow-700',
-    closed:  'bg-red-100 text-red-700',
+    closed:  'bg-red-100 text-red-600',
     expired: 'bg-orange-100 text-orange-700',
   };
   return map[status] || 'bg-gray-100 text-gray-600';
 };
 
 export const jobStatusLabel = (status) => {
-  const map = {
-    draft: 'Draft', active: 'Active', paused: 'Paused', closed: 'Closed', expired: 'Expired',
-  };
+  const map = { draft: 'Draft', active: 'Active', paused: 'Paused', closed: 'Closed', expired: 'Expired' };
   return map[status] || status;
 };
 
@@ -111,5 +106,5 @@ export const workModeBadgeColor = (mode) => {
     remote: 'bg-emerald-100 text-emerald-700',
     hybrid: 'bg-cyan-100 text-cyan-700',
   };
-  return map[mode] || 'bg-gray-100 text-gray-700';
+  return map[mode] || 'bg-gray-100 text-gray-600';
 };

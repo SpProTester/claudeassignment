@@ -84,7 +84,7 @@ export default function SeekerDashboard() {
 
   const { data: jobsData } = useQuery({
     queryKey: ['jobs', 'recommended'],
-    queryFn: () => jobsService.getAll({ limit: 6 }).then((r) => r.data),
+    queryFn: () => jobsService.search({ limit: '6', sort_by: 'date' }),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -93,53 +93,53 @@ export default function SeekerDashboard() {
   const recommendedJobs = jobsData?.jobs ?? [];
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-1">Track your job search activity at a glance.</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-extrabold text-gray-900">My Dashboard</h1>
+        <p className="text-sm text-gray-500 mt-0.5">Track your job search activity at a glance.</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatsCard label="Applied" value={stats?.totalApplications} icon={icons.applied} color="blue" loading={dashLoading} />
-        <StatsCard label="Shortlisted" value={stats?.shortlistedCount} icon={icons.shortlisted} color="green" loading={dashLoading} />
-        <StatsCard label="Saved Jobs" value={stats?.savedJobsCount} icon={icons.saved} color="purple" loading={dashLoading} />
-        <StatsCard label="Profile Views" value={stats?.profileViews} icon={icons.views} color="orange" loading={dashLoading} />
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatsCard label="Jobs Applied"  value={stats?.totalApplications} icon={icons.applied}     color="purple" loading={dashLoading} />
+        <StatsCard label="Shortlisted"   value={stats?.shortlistedCount}  icon={icons.shortlisted} color="green"  loading={dashLoading} />
+        <StatsCard label="Saved Jobs"    value={stats?.savedJobsCount}    icon={icons.saved}       color="blue"   loading={dashLoading} />
+        <StatsCard label="Profile Views" value={stats?.profileViews}      icon={icons.views}       color="orange" loading={dashLoading} />
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Recent Applications */}
-        <div className="flex-1 bg-white rounded-xl border border-gray-200 shadow-card overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900">Recent Applications</h2>
-            <Link to="/seeker/applications" className="text-xs text-primary-600 hover:text-primary-700 font-medium">
+        <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-card overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
+            <h2 className="font-bold text-gray-900">Recent Applications</h2>
+            <Link to="/seeker/applications" className="text-xs font-semibold text-primary-600 hover:text-primary-700">
               View all →
             </Link>
           </div>
 
           {appsLoading ? (
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-gray-50">
               {Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}
             </div>
           ) : recentApps.length === 0 ? (
-            <div className="text-center py-14">
-              <p className="text-2xl mb-2">📋</p>
-              <p className="text-sm font-medium text-gray-700">No applications yet</p>
-              <p className="text-xs text-gray-400 mt-1">Start applying to your dream jobs!</p>
-              <Link to="/jobs" className="btn-primary mt-4 inline-flex text-xs">Browse Jobs</Link>
+            <div className="text-center py-16">
+              <div className="text-5xl mb-4">📋</div>
+              <p className="font-bold text-gray-900 mb-1">No applications yet</p>
+              <p className="text-sm text-gray-500 mb-5">Start applying to your dream jobs!</p>
+              <Link to="/jobs" className="btn-primary text-sm">Browse Jobs</Link>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-gray-50">
               {recentApps.map((app) => (
-                <div key={app.id} className="flex items-center gap-4 px-5 py-4">
-                  <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-400 shrink-0">
+                <div key={app.id} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
+                  <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center text-sm font-bold text-primary-600 shrink-0">
                     {app.job?.employer?.companyName?.[0] ?? 'J'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <Link to={`/jobs/${app.job?.id}`} className="text-sm font-semibold text-gray-900 hover:text-primary-600 truncate block">
+                    <Link to={`/jobs/${app.job?.id}`} className="text-sm font-semibold text-gray-900 hover:text-primary-600 truncate block transition-colors">
                       {app.job?.title ?? 'Untitled Job'}
                     </Link>
-                    <p className="text-xs text-gray-500">{app.job?.employer?.companyName}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{app.job?.employer?.companyName}</p>
                   </div>
                   <div className="text-right shrink-0">
                     <span className={`badge ${atsStageColor(app.atsStage)}`}>
@@ -154,19 +154,17 @@ export default function SeekerDashboard() {
         </div>
 
         {/* Recommended Jobs */}
-        <div className="w-full lg:w-80 shrink-0 bg-white rounded-xl border border-gray-200 shadow-card overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900">Recommended</h2>
-            <Link to="/jobs" className="text-xs text-primary-600 hover:text-primary-700 font-medium">
-              Browse all →
-            </Link>
+        <div className="w-full lg:w-80 shrink-0 bg-white rounded-2xl border border-gray-100 shadow-card overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
+            <h2 className="font-bold text-gray-900">Recommended Jobs</h2>
+            <Link to="/jobs" className="text-xs font-semibold text-primary-600 hover:text-primary-700">Browse all →</Link>
           </div>
           {recommendedJobs.length === 0 ? (
             <div className="text-center py-10">
-              <p className="text-sm text-gray-400">No jobs available</p>
+              <p className="text-sm text-gray-400">No jobs available right now</p>
             </div>
           ) : (
-            <div>
+            <div className="divide-y divide-gray-50">
               {recommendedJobs.map((job) => (
                 <JobCard key={job.id} job={job} />
               ))}

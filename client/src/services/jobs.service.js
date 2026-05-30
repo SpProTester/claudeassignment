@@ -43,15 +43,15 @@ export const jobsService = {
   search: async (params) => {
     const raw = await api.get('/jobs', { params });
     return {
-      jobs:       (raw.jobs ?? []).map(norm),
-      pagination: raw.pagination,
+      jobs:       (raw.data?.jobs ?? []).map(norm),
+      pagination: raw.data?.pagination,
     };
   },
 
   /** Fetch single job by slug and increment views_count. */
   getBySlug: async (slug) => {
     const raw = await api.get(`/jobs/${slug}`);
-    return norm(raw.job);
+    return norm(raw.data?.job);
   },
 
   /** Legacy by UUID — used by employer edit/detail routes. */

@@ -42,6 +42,37 @@ const PROFILE_INCLUDES = [
 const ownEntry = (model, id, seekerId) =>
   model.findOne({ where: { id, seekerId } });
 
+// ── Public Profile ────────────────────────────────────────────────────────────
+
+// GET /api/seekers/public/:seekerId  (no auth — viewable by employers & guests)
+export const getPublicProfile = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.params.seekerId, {
+      attributes: ['id', 'fullName', 'role', 'createdAt'],
+      include: PROFILE_INCLUDES,
+      order: [
+        [{ model: Experience, as: 'experiences' }, 'startDate', 'DESC'],
+        [{ model: Education, as: 'educations' }, 'startDate', 'DESC'],
+        [{ model: Certification, as: 'certifications' }, 'issueDate', 'DESC'],
+      ],
+    });
+
+    if (!user || user.role !== 'seeker') return sendError(res, 'Profile not found.', 404);
+
+    if (user.seekerProfile?.profileVisibility === 'private') {
+      return sendError(res, 'This profile is private.', 403);
+    }
+
+    // Increment profileViews — fire-and-forget so it never blocks the response
+    SeekerProfile.increment('profileViews', { where: { userId: req.params.seekerId } })
+      .catch((err) => console.error('[profileViews] increment failed:', err.message));
+
+    sendSuccess(res, { profile: user });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ── Profile ───────────────────────────────────────────────────────────────────
 
 // GET /api/seekers/profile

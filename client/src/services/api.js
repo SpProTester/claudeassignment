@@ -85,9 +85,12 @@ api.interceptors.response.use(
       }
     }
 
-    const message =
-      err.response?.data?.message || err.message || 'An unexpected error occurred.';
-    return Promise.reject(new Error(message));
+    const data = err.response?.data;
+    const message = data?.message || err.message || 'An unexpected error occurred.';
+    const apiError = new Error(message);
+    // Preserve field-level validation errors so forms can map them to fields
+    if (data?.errors?.length) apiError.fieldErrors = data.errors;
+    return Promise.reject(apiError);
   }
 );
 

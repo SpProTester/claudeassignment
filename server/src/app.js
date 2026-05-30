@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import router from './routes/index.js';
 import { errorHandler } from './middleware/error.middleware.js';
@@ -13,10 +12,25 @@ const app = express();
 // Security headers
 app.use(helmet());
 
-// CORS — allow React dev server and configured client URL
+// CORS — allow main client and admin portal.
+// In development any localhost port is permitted (Vite picks dynamically).
+const allowedOrigins = [
+  process.env.CLIENT_URL       || 'http://localhost:5173',
+  process.env.ADMIN_CLIENT_URL || 'http://localhost:5174',
+].filter(Boolean);
+
+const isDev = process.env.NODE_ENV !== 'production';
+
 app.use(
   cors({
-    origin: [process.env.CLIENT_URL || 'http://localhost:5173'],
+    origin: (origin, cb) => {
+      // Allow requests with no origin (curl, Postman, server-to-server)
+      if (!origin) return cb(null, true);
+      // In development, allow any localhost origin regardless of port
+      if (isDev && /^https?:\/\/localhost(:\d+)?$/.test(origin)) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      cb(new Error(`CORS: origin ${origin} not allowed`));
+    },
     credentials: true,
   })
 );
@@ -26,19 +40,12 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 
-// Rate limiting — 100 requests per 15 minutes per IP
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { success: false, message: 'Too many requests, please try again later.' },
-  })
-);
-
 // Cookie parser (required for httpOnly refresh token)
 app.use(cookieParser());
+
+// Stripe webhook needs the raw (unparsed) body to verify the signature.
+// This must be registered BEFORE express.json() intercepts the request.
+app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 
 // Body parsers
 app.use(express.json({ limit: '10kb' }));

@@ -13,15 +13,14 @@ export default (sequelize, DataTypes) => {
         references: { model: 'users', key: 'id' },
         onDelete: 'CASCADE',
       },
+      // Uploaded resumes: fileName + storagePath set; null for built resumes until PDF generated.
       fileName: {
         type: DataTypes.STRING(255),
-        allowNull: false,
-        validate: { notEmpty: true },
+        allowNull: true,
       },
       storagePath: {
         type: DataTypes.TEXT,
-        allowNull: false,
-        validate: { notEmpty: true },
+        allowNull: true,
       },
       fileSize: {
         type: DataTypes.INTEGER,
@@ -40,21 +39,41 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.JSONB,
         allowNull: true,
       },
+      // ── Builder-specific fields ──────────────────────────────────────
+      resumeType: {
+        type: DataTypes.STRING(20),
+        allowNull: false,
+        defaultValue: 'uploaded',
+        validate: { isIn: [['uploaded', 'built']] },
+      },
+      templateId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: { model: 'resume_templates', key: 'id' },
+        onDelete: 'SET NULL',
+      },
+      resumeContent: {
+        type: DataTypes.JSONB,
+        allowNull: true,
+      },
     },
     {
       tableName: 'resumes',
       timestamps: true,
       underscored: true,
       indexes: [
-        { fields: ['seeker_id'], name: 'resumes_seeker_id_idx' },
-        { fields: ['is_default'], name: 'resumes_is_default_idx' },
+        { fields: ['seeker_id'],   name: 'resumes_seeker_id_idx' },
+        { fields: ['is_default'],  name: 'resumes_is_default_idx' },
+        { fields: ['resume_type'], name: 'resumes_resume_type_idx' },
+        { fields: ['template_id'], name: 'resumes_template_id_idx' },
       ],
     }
   );
 
   Resume.associate = (models) => {
-    Resume.belongsTo(models.User, { foreignKey: 'seekerId', as: 'seeker' });
-    Resume.hasMany(models.Application, { foreignKey: 'resumeId', as: 'applications' });
+    Resume.belongsTo(models.User,           { foreignKey: 'seekerId',  as: 'seeker' });
+    Resume.belongsTo(models.ResumeTemplate, { foreignKey: 'templateId', as: 'template' });
+    Resume.hasMany(models.Application,     { foreignKey: 'resumeId',  as: 'applications' });
   };
 
   return Resume;

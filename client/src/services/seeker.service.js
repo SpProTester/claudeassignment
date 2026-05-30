@@ -46,6 +46,13 @@ export const seekerService = {
   setDefaultResume: (id) =>
     api.put(`${BASE}/resume/${id}/default`).then((r) => r.data),
 
+  // ── Resume Builder ────────────────────────────────────────────────────────
+  getTemplates:     ()         => api.get(`${BASE}/resume/templates`).then((r) => r.data),
+  createBuiltResume:(data)     => api.post(`${BASE}/resume/builder`, data).then((r) => r.data),
+  getResumeContent: (id)       => api.get(`${BASE}/resume/${id}`).then((r) => r.data),
+  updateBuiltResume:(id, data) => api.put(`${BASE}/resume/${id}`, data).then((r) => r.data),
+  resumeExportUrl:  (id)       => `${BASE}/resume/${id}/export`,
+
   // ── Saved Jobs ───────────────────────────────────────────────────────────
   getSavedJobs: () => api.get(`${BASE}/saved-jobs`).then((r) => r.data),
   unsaveJob: (jobId) => api.delete(`${BASE}/saved-jobs/${jobId}`),
