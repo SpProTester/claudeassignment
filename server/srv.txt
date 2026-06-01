@@ -1,0 +1,9 @@
+[stripe] Mock mode active — no real Stripe calls will be made.
+Executing (default): SELECT 1+1 AS result
+Database connection established.
+[job-expiry] Job expiry cron scheduled (runs hourly).
+[job-alerts] Job alert cron scheduled (runs daily at 08:00).
+Server running on http://localhost:5000 [development]
+[0mGET /api/payments/plans [32m200[0m 2.854 ms - 720[0m
+Executing (default): SELECT "id", "email", "password_hash" AS "passwordHash", "role", "full_name" AS "fullName", "is_verified" AS "isVerified", "is_active" AS "isActive", "refresh_token" AS "refreshToken", "password_reset_otp" AS "passwordResetOtp", "password_reset_otp_expiry" AS "passwordResetOtpExpiry", "created_at" AS "createdAt", "updated_at" AS "updatedAt" FROM "users" AS "User" WHERE "User"."email" = 'test@employer.com';
+[0mPOST /api/auth/login [33m401[0m 369.661 ms - 56[0m
