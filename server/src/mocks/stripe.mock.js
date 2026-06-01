@@ -29,9 +29,9 @@ const stripeMock = {
         const plan = metadata.plan ?? 'professional';
         const employerId = metadata.employerId ?? '';
 
-        // Mock checkout URL — hits the dev complete endpoint which fires the webhook
-        const baseUrl = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 5000}`;
-        const url = `${baseUrl}/api/payments/dev/mock-checkout-complete?session_id=${sessionId}&plan=${plan}&employer_id=${employerId}&customer=${customer}`;
+        // Mock checkout URL — sends user to the frontend mock payment page first
+        const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+        const url = `${clientUrl}/checkout/mock?session_id=${sessionId}&plan=${plan}&employer_id=${employerId}&customer=${customer}`;
 
         const session = { id: sessionId, url, mode, customer, metadata, subscription: null };
         sessions.set(sessionId, session);

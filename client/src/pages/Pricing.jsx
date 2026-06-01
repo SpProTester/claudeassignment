@@ -31,24 +31,32 @@ export default function Pricing() {
   const plans = plansData?.data?.plans ?? [];
 
   const handleSelect = async (planId) => {
+    // Not logged in or not an employer → send to register
+    if (!user || !isEmployer) {
+      navigate('/register');
+      return;
+    }
+
+    // Downgrade to free — user must cancel their subscription from the billing page
     if (planId === 'starter') {
-      navigate('/register');
+      navigate('/employer/billing');
       return;
     }
-    if (!user) {
-      navigate('/register');
-      return;
-    }
-    if (!isEmployer) {
-      navigate('/register');
-      return;
-    }
+
+    // Paid plan upgrade/downgrade → try checkout
     setLoadingPlan(planId);
     try {
       const res = await paymentsService.createCheckout(planId);
       window.location.href = res.data.url;
-    } catch {
+    } catch (err) {
       setLoadingPlan(null);
+      // No company profile yet → create one first, then checkout
+      if (err.message?.toLowerCase().includes('company profile')) {
+        navigate(`/employer/company?plan=${planId}`);
+        return;
+      }
+      // Active subscription conflict or any other issue → go to billing
+      navigate('/employer/billing');
     }
   };
 

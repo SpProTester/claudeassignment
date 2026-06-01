@@ -73,7 +73,6 @@ export default function Register() {
   const { register: registerUser } = useAuth();
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState('starter');
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   const { register, handleSubmit, control, setError, formState: { errors, isSubmitting } } = useForm({
     resolver: yupResolver(schema),
@@ -95,12 +94,10 @@ export default function Register() {
     try {
       await registerUser(payload);
       if (payload.role === 'employer' && selectedPlan !== 'starter') {
-        setCheckoutLoading(true);
-        try {
-          const res = await paymentsService.createCheckout(selectedPlan);
-          window.location.href = res.data.url;
-          return;
-        } catch { /* fall through */ }
+        // New employer with a paid plan — must create a company profile first,
+        // then the company page will trigger checkout with this plan.
+        navigate(`/employer/company?plan=${selectedPlan}`);
+        return;
       }
       navigate('/dashboard');
     } catch (err) {
@@ -117,7 +114,7 @@ export default function Register() {
     }
   };
 
-  const isWorking = isSubmitting || checkoutLoading;
+  const isWorking = isSubmitting;
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex">

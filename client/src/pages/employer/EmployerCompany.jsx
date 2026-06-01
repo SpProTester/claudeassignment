@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { employerService } from '../../services/employer.service.js';
+import { paymentsService } from '../../services/payments.service.js';
 import { toast } from '../../store/uiStore.js';
 
 const COMPANY_SIZES = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1001+'];
@@ -28,6 +30,8 @@ function Field({ label, required, error, hint, children }) {
 export default function EmployerCompany() {
   const qc = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
+  const [searchParams] = useSearchParams();
+  const pendingPlan = searchParams.get('plan'); // set when coming from registration with a paid plan
 
   const { data, isLoading, error: fetchError } = useQuery({
     queryKey: ['employer', 'company'],
@@ -67,10 +71,20 @@ export default function EmployerCompany() {
       company
         ? employerService.updateCompany(company.id, payload)
         : employerService.createCompany(payload),
-    onSuccess: () => {
-      toast.success(company ? 'Profile updated!' : 'Company profile created!');
+    onSuccess: async () => {
+      const wasCreating = !company;
+      toast.success(wasCreating ? 'Company profile created!' : 'Profile updated!');
       qc.invalidateQueries(['employer', 'company']);
       setIsCreating(false);
+
+      if (wasCreating && pendingPlan && ['professional', 'business'].includes(pendingPlan)) {
+        try {
+          const res = await paymentsService.createCheckout(pendingPlan);
+          window.location.href = res.data.url;
+        } catch (e) {
+          toast.error(e.message || 'Could not start checkout. Go to Billing to upgrade.');
+        }
+      }
     },
     onError: (e) => toast.error(e.message),
   });
@@ -131,6 +145,18 @@ export default function EmployerCompany() {
         </p>
       </div>
 
+      {pendingPlan && !company && (
+        <div className="flex items-start gap-3 bg-primary-50 border border-primary-200 rounded-xl px-4 py-3 mb-6">
+          <svg className="w-5 h-5 text-primary-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+          </svg>
+          <div>
+            <p className="text-sm font-semibold text-primary-800">One more step to activate your <span className="capitalize">{pendingPlan}</span> plan</p>
+            <p className="text-xs text-primary-700 mt-0.5">Fill in your company details below, then you&apos;ll be taken to checkout.</p>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Logo preview + URL */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-card p-6">
@@ -159,10 +185,7 @@ export default function EmployerCompany() {
                 <input
                   className="input-field"
                   placeholder="https://yourcompany.com/logo.png"
-                  {...register('logoUrl', {
-                    validate: (v) =>
-                      !v || /^https?:\/\/.+/.test(v) || 'Must be a valid URL (https://…)',
-                  })}
+                  {...register('logoUrl')}
                 />
               </Field>
             </div>
@@ -286,7 +309,13 @@ export default function EmployerCompany() {
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
             )}
-            {updateMutation.isPending ? 'Saving…' : company ? 'Save Changes' : 'Create Profile'}
+            {updateMutation.isPending
+              ? (pendingPlan && !company ? 'Creating & redirecting to payment…' : 'Saving…')
+              : company
+                ? 'Save Changes'
+                : pendingPlan
+                  ? `Create Profile & Pay for ${pendingPlan.charAt(0).toUpperCase() + pendingPlan.slice(1)}`
+                  : 'Create Profile'}
           </button>
         </div>
       </form>

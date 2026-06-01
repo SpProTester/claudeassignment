@@ -25,7 +25,7 @@ router.get('/my/profile', getMyCompany);
 
 router.post(
   '/',
-  [body('name').trim().notEmpty().withMessage('Company name is required.')],
+  [body('companyName').trim().notEmpty().withMessage('Company name is required.')],
   validate,
   createCompany,
 );

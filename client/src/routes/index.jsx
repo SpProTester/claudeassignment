@@ -25,10 +25,15 @@ import EmployerDashboard from '../pages/employer/EmployerDashboard.jsx';
 import EmployerJobs from '../pages/employer/EmployerJobs.jsx';
 import JobForm from '../pages/employer/JobForm.jsx';
 import ApplicantsBoard from '../pages/employer/ApplicantsBoard.jsx';
+import JobReviewPublish from '../pages/employer/JobReviewPublish.jsx';
+import EmployerApplications from '../pages/employer/EmployerApplications.jsx';
 import EmployerCompany from '../pages/employer/EmployerCompany.jsx';
 import BillingPage from '../pages/employer/BillingPage.jsx';
 import InvoicesPage from '../pages/employer/InvoicesPage.jsx';
 import Pricing from '../pages/Pricing.jsx';
+import Blog from '../pages/Blog.jsx';
+import BlogPost from '../pages/BlogPost.jsx';
+import MockCheckout from '../pages/MockCheckout.jsx';
 
 export default function AppRoutes() {
   return (
@@ -37,6 +42,9 @@ export default function AppRoutes() {
       <Route path="/seeker/resume/builder/new" element={<RoleRoute roles={['seeker']}><ResumeBuilder /></RoleRoute>} />
       <Route path="/seeker/resume/:id/edit"    element={<RoleRoute roles={['seeker']}><ResumeBuilder /></RoleRoute>} />
 
+      {/* ── Mock Stripe checkout (full-screen, dev only) ───── */}
+      <Route path="/checkout/mock" element={<MockCheckout />} />
+
       <Route path="/" element={<Layout />}>
         {/* ── Public ──────────────────────────────────────── */}
         <Route index element={<Home />} />
@@ -44,6 +52,8 @@ export default function AppRoutes() {
         <Route path="jobs/:slug"          element={<JobDetail />} />
         <Route path="companies/:slug"     element={<CompanyProfile />} />
         <Route path="pricing"             element={<Pricing />} />
+        <Route path="blog"                element={<Blog />} />
+        <Route path="blog/:slug"          element={<BlogPost />} />
         <Route path="login"               element={<Login />} />
         <Route path="register"            element={<Register />} />
         <Route path="forgot-password"     element={<ForgotPassword />} />
@@ -73,7 +83,9 @@ export default function AppRoutes() {
           <Route path="jobs"                element={<EmployerJobs />} />
           <Route path="jobs/new"            element={<JobForm />} />
           <Route path="jobs/:id/edit"       element={<JobForm />} />
-          <Route path="jobs/:id/applicants" element={<ApplicantsBoard />} />
+          <Route path="applications"             element={<EmployerApplications />} />
+          <Route path="jobs/:id/review-publish" element={<JobReviewPublish />} />
+          <Route path="jobs/:id/applicants"    element={<ApplicantsBoard />} />
           <Route path="company"             element={<EmployerCompany />} />
           <Route path="billing"             element={<BillingPage />} />
           <Route path="billing/invoices"    element={<InvoicesPage />} />
