@@ -309,15 +309,49 @@ export default function JobDetail() {
               </div>
 
               {/* Description */}
-              <div className="p-7">
+              <div className="p-7 border-b border-gray-50">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">Job Description</h2>
                 <div className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">
                   {job.description}
                 </div>
               </div>
 
+              {/* Requirements */}
+              {job.requirements && (
+                <div className="p-7 border-b border-gray-50">
+                  <h2 className="text-lg font-bold text-gray-900 mb-4">Requirements</h2>
+                  <div className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">
+                    {job.requirements}
+                  </div>
+                </div>
+              )}
+
+              {/* Benefits */}
+              {job.benefits && (
+                <div className="p-7 border-b border-gray-50">
+                  <h2 className="text-lg font-bold text-gray-900 mb-4">Benefits & Perks</h2>
+                  <div className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">
+                    {job.benefits}
+                  </div>
+                </div>
+              )}
+
+              {/* Skills */}
+              {job.skills?.length > 0 && (
+                <div className="p-7 border-b border-gray-50">
+                  <h2 className="text-lg font-bold text-gray-900 mb-4">Required Skills</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {job.skills.map((s) => (
+                      <span key={s.id ?? s.name} className="badge bg-primary-50 text-primary-700 text-xs px-3 py-1">
+                        {s.name ?? s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Footer */}
-              <div className="px-7 pb-7 pt-2 border-t border-gray-50">
+              <div className="px-7 pb-7 pt-4">
                 <ShareButtons title={job.title} />
               </div>
             </div>

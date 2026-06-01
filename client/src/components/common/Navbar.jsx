@@ -55,18 +55,20 @@ export default function Navbar() {
 
           {/* Desktop center nav */}
           <nav className="hidden md:flex items-center gap-1">
-            <NavLink
-              to="/jobs"
-              className={({ isActive }) =>
-                `px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150 ${
-                  isActive
-                    ? 'text-primary-600 bg-primary-50'
-                    : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50'
-                }`
-              }
-            >
-              Find Jobs
-            </NavLink>
+            {role !== 'employer' && (
+              <NavLink
+                to="/jobs"
+                className={({ isActive }) =>
+                  `px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150 ${
+                    isActive
+                      ? 'text-primary-600 bg-primary-50'
+                      : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50'
+                  }`
+                }
+              >
+                Find Jobs
+              </NavLink>
+            )}
             {role !== 'seeker' && (
               <NavLink
                 to="/pricing"
@@ -213,13 +215,15 @@ export default function Navbar() {
         {/* Mobile menu */}
         {menuOpen && (
           <div className="md:hidden py-3 border-t border-gray-100 space-y-1 animate-slide-up">
-            <NavLink
-              to="/jobs"
-              className="flex items-center px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-primary-50 hover:text-primary-700 rounded-xl"
-              onClick={() => setMenuOpen(false)}
-            >
-              Find Jobs
-            </NavLink>
+            {role !== 'employer' && (
+              <NavLink
+                to="/jobs"
+                className="flex items-center px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-primary-50 hover:text-primary-700 rounded-xl"
+                onClick={() => setMenuOpen(false)}
+              >
+                Find Jobs
+              </NavLink>
+            )}
             {role !== 'seeker' && (
               <NavLink
                 to="/pricing"

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { employerService } from '../../services/employer.service.js';
 import { toast } from '../../store/uiStore.js';
@@ -52,7 +52,7 @@ function SelectField({ label, required, error, children, ...props }) {
 }
 
 // ── Step components ───────────────────────────────────────────────────────────
-function Step1({ register, errors }) {
+function Step1({ register, errors, control }) {
   return (
     <div className="space-y-5">
       <Field label="Job Title" required error={errors.title?.message}>
@@ -68,35 +68,59 @@ function Step1({ register, errors }) {
       </Field>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <SelectField
-          label="Job Type" required
-          error={errors.jobType?.message}
-          {...register('jobType', { required: 'Job type is required.' })}
-        >
-          {JOB_TYPES.map((t) => (
-            <option key={t} value={t}>{t.replace('-', ' ')}</option>
-          ))}
-        </SelectField>
+        <Field label="Job Type" required error={errors.jobType?.message}>
+          <Controller
+            name="jobType"
+            control={control}
+            rules={{ required: 'Job type is required.' }}
+            render={({ field }) => (
+              <select
+                {...field}
+                className={`input-field appearance-none ${errors.jobType ? 'border-red-400 focus:ring-red-500' : ''}`}
+              >
+                {JOB_TYPES.map((t) => (
+                  <option key={t} value={t}>{t.replace(/-/g, ' ')}</option>
+                ))}
+              </select>
+            )}
+          />
+        </Field>
 
-        <SelectField
-          label="Work Mode" required
-          error={errors.workMode?.message}
-          {...register('workMode', { required: 'Work mode is required.' })}
-        >
-          {WORK_MODES.map((m) => (
-            <option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>
-          ))}
-        </SelectField>
+        <Field label="Work Mode" required error={errors.workMode?.message}>
+          <Controller
+            name="workMode"
+            control={control}
+            rules={{ required: 'Work mode is required.' }}
+            render={({ field }) => (
+              <select
+                {...field}
+                className={`input-field appearance-none ${errors.workMode ? 'border-red-400 focus:ring-red-500' : ''}`}
+              >
+                {WORK_MODES.map((m) => (
+                  <option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>
+                ))}
+              </select>
+            )}
+          />
+        </Field>
 
-        <SelectField
-          label="Experience Level" required
-          error={errors.experienceLevel?.message}
-          {...register('experienceLevel', { required: 'Experience level is required.' })}
-        >
-          {EXP_LEVELS.map((l) => (
-            <option key={l} value={l}>{l.charAt(0).toUpperCase() + l.slice(1)}</option>
-          ))}
-        </SelectField>
+        <Field label="Experience Level" required error={errors.experienceLevel?.message}>
+          <Controller
+            name="experienceLevel"
+            control={control}
+            rules={{ required: 'Experience level is required.' }}
+            render={({ field }) => (
+              <select
+                {...field}
+                className={`input-field appearance-none ${errors.experienceLevel ? 'border-red-400 focus:ring-red-500' : ''}`}
+              >
+                {EXP_LEVELS.map((l) => (
+                  <option key={l} value={l}>{l.charAt(0).toUpperCase() + l.slice(1)}</option>
+                ))}
+              </select>
+            )}
+          />
+        </Field>
       </div>
     </div>
   );
@@ -110,10 +134,28 @@ function Step2({ register, errors, watch }) {
     <div className="space-y-5">
       <Field label="Job Description" required error={errors.description?.message}>
         <textarea
-          rows={6}
-          placeholder="Describe the role, responsibilities, and what you're looking for…"
+          rows={5}
+          placeholder="Describe the role, day-to-day responsibilities, and team…"
           className={`input-field resize-none ${errors.description ? 'border-red-400 focus:ring-red-500' : ''}`}
           {...register('description', { required: 'Description is required.' })}
+        />
+      </Field>
+
+      <Field label="Requirements" error={errors.requirements?.message}>
+        <textarea
+          rows={4}
+          placeholder="List required qualifications, experience, and skills (one per line)…"
+          className="input-field resize-none"
+          {...register('requirements')}
+        />
+      </Field>
+
+      <Field label="Benefits & Perks" error={errors.benefits?.message}>
+        <textarea
+          rows={3}
+          placeholder="e.g. Health insurance, flexible hours, remote work, stock options…"
+          className="input-field resize-none"
+          {...register('benefits')}
         />
       </Field>
 
@@ -233,14 +275,15 @@ function Step3({ skills, setSkills }) {
       </div>
 
       <p className="text-xs text-gray-400 bg-gray-50 rounded-lg p-3 border border-gray-100">
-        <strong>Note:</strong> Skill tags are displayed on the job listing. Backend skill-ID linking requires a skills management endpoint (coming soon).
+        <strong>Note:</strong> Skill tags are displayed on the job listing and saved to the database.
       </p>
     </div>
   );
 }
 
-function Step4({ watch, skills, isEdit }) {
-  const values = watch();
+function Step4({ register, formValues, skills }) {
+  const values = formValues;
+  const status = formValues.status;
 
   return (
     <div className="space-y-5">
@@ -278,6 +321,20 @@ function Step4({ watch, skills, isEdit }) {
           </div>
         )}
 
+        {values.requirements && (
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Requirements</p>
+            <p className="text-sm text-gray-700 whitespace-pre-wrap line-clamp-4">{values.requirements}</p>
+          </div>
+        )}
+
+        {values.benefits && (
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Benefits & Perks</p>
+            <p className="text-sm text-gray-700 whitespace-pre-wrap line-clamp-3">{values.benefits}</p>
+          </div>
+        )}
+
         {skills.length > 0 && (
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Skills</p>
@@ -296,26 +353,24 @@ function Step4({ watch, skills, isEdit }) {
         )}
       </div>
 
-      {/* Status selection */}
+      {/* Status selection — properly wired to the form */}
       <div>
         <p className="text-sm font-medium text-gray-700 mb-2">Publish Status</p>
         <div className="grid grid-cols-2 gap-3">
-          {[
-            { value: 'draft', label: 'Save as Draft', desc: 'Not visible to job seekers yet.', color: 'gray' },
-            { value: 'active', label: 'Publish Now', desc: 'Immediately visible to all seekers.', color: 'green' },
-          ].map(({ value, label, desc, color }) => (
-            <label key={value} className="cursor-pointer">
-              <input type="radio" className="sr-only" value={value} {...(watch('status') === value ? { defaultChecked: true } : {})} name="_statusPreview" readOnly />
-              <div className={`p-3 rounded-lg border-2 text-sm transition-colors ${
-                watch('status') === value
-                  ? `border-${color}-400 bg-${color}-50`
-                  : 'border-gray-200 bg-white hover:border-gray-300'
-              }`}>
-                <p className="font-medium text-gray-800">{label}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
-              </div>
-            </label>
-          ))}
+          <label className="cursor-pointer">
+            <input type="radio" className="sr-only" value="draft" {...register('status')} />
+            <div className={`p-3 rounded-lg border-2 text-sm transition-colors ${status === 'draft' ? 'border-gray-400 bg-gray-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+              <p className="font-medium text-gray-800">Save as Draft</p>
+              <p className="text-xs text-gray-500 mt-0.5">Not visible to job seekers yet.</p>
+            </div>
+          </label>
+          <label className="cursor-pointer">
+            <input type="radio" className="sr-only" value="active" {...register('status')} />
+            <div className={`p-3 rounded-lg border-2 text-sm transition-colors ${status === 'active' ? 'border-green-400 bg-green-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+              <p className="font-medium text-gray-800">Publish Now</p>
+              <p className="text-xs text-gray-500 mt-0.5">Immediately visible to all seekers.</p>
+            </div>
+          </label>
         </div>
       </div>
     </div>
@@ -339,6 +394,8 @@ export default function JobForm() {
       workMode: 'onsite',
       experienceLevel: 'mid',
       description: '',
+      requirements: '',
+      benefits: '',
       location: '',
       salaryMin: '',
       salaryMax: '',
@@ -348,31 +405,33 @@ export default function JobForm() {
   });
 
   // Load existing job for edit mode
-  const { isLoading: loadingJob } = useQuery({
+  const { data: jobData, isLoading: loadingJob } = useQuery({
     queryKey: ['employer', 'job', id],
     queryFn: () => employerService.getJob(id),
     enabled: isEdit,
-    onSuccess: (data) => {
-      const job = data?.data?.job;
-      if (job) {
-        reset({
-          title:           job.title ?? '',
-          jobType:         job.jobType ?? 'full-time',
-          workMode:        job.workMode ?? 'onsite',
-          experienceLevel: job.experienceLevel ?? 'mid',
-          description:     job.description ?? '',
-          location:        job.location ?? '',
-          salaryMin:       job.salaryMin ?? '',
-          salaryMax:       job.salaryMax ?? '',
-          expiresAt:       job.expiresAt ? job.expiresAt.split('T')[0] : '',
-          status:          job.status ?? 'draft',
-        });
-        if (job.skills?.length) {
-          setSkills(job.skills.map((s) => s.name ?? s));
-        }
-      }
-    },
   });
+
+  useEffect(() => {
+    const job = jobData?.data?.job;
+    if (!job) return;
+    reset({
+      title:           job.title ?? '',
+      jobType:         job.jobType ?? 'full-time',
+      workMode:        job.workMode ?? 'onsite',
+      experienceLevel: job.experienceLevel ?? 'mid',
+      description:     job.description ?? '',
+      requirements:    job.requirements ?? '',
+      benefits:        job.benefits ?? '',
+      location:        job.location ?? '',
+      salaryMin:       job.salaryMin ?? '',
+      salaryMax:       job.salaryMax ?? '',
+      expiresAt:       job.expiresAt ? job.expiresAt.split('T')[0] : '',
+      status:          job.status ?? 'draft',
+    });
+    // Always sync skills from DB (empty array clears any stale local state)
+    setSkills(Array.isArray(job.skills) ? job.skills.map((s) => s.name ?? s) : []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobData]); // jobData is the only true external dep; reset/setSkills are stable
 
   const mutation = useMutation({
     mutationFn: (payload) =>
@@ -381,10 +440,13 @@ export default function JobForm() {
       toast.success(isEdit ? 'Job updated!' : 'Job posted!');
       qc.invalidateQueries(['employer', 'jobs']);
       const jobId = data?.data?.job?.id;
-      navigate(jobId ? `/employer/jobs/${jobId}/applicants` : '/employer/jobs');
+      navigate(jobId ? `/employer/jobs/${jobId}/review-publish` : '/employer/jobs');
     },
     onError: (e) => toast.error(e.message),
   });
+
+  // Subscribe to all values in the parent (always mounted) so Step4 preview is always current
+  const formValues = watch();
 
   const handleNext = async () => {
     const fields = STEP_FIELDS[step];
@@ -399,8 +461,10 @@ export default function JobForm() {
       ...values,
       salaryMin,
       salaryMax,
-      expiresAt: values.expiresAt || null,
-      skillIds: [],  // wire up when /api/skills endpoint is available
+      requirements: values.requirements || null,
+      benefits:     values.benefits || null,
+      expiresAt:    values.expiresAt || null,
+      skillNames:   skills,
     });
   };
 
@@ -459,10 +523,10 @@ export default function JobForm() {
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="bg-white rounded-xl border border-gray-200 shadow-card p-6 mb-6">
-          {step === 0 && <Step1 register={register} errors={errors} />}
+          {step === 0 && <Step1 register={register} errors={errors} control={control} />}
           {step === 1 && <Step2 register={register} errors={errors} watch={watch} />}
           {step === 2 && <Step3 skills={skills} setSkills={setSkills} />}
-          {step === 3 && <Step4 watch={watch} skills={skills} isEdit={isEdit} />}
+          {step === 3 && <Step4 register={register} formValues={formValues} skills={skills} />}
         </div>
 
         {/* Navigation */}

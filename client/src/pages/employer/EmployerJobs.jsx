@@ -6,21 +6,22 @@ import { jobStatusColor, jobStatusLabel, jobTypeBadgeColor, workModeBadgeColor, 
 import { toast } from '../../store/uiStore.js';
 
 const STATUS_FILTERS = [
-  { value: '', label: 'All Statuses' },
-  { value: 'active', label: 'Active' },
-  { value: 'draft', label: 'Draft' },
-  { value: 'paused', label: 'Paused' },
-  { value: 'closed', label: 'Closed' },
+  { value: '',        label: 'All Statuses' },
+  { value: 'active',  label: 'Active' },
+  { value: 'draft',   label: 'Draft' },
+  { value: 'paused',  label: 'Paused' },
+  { value: 'closed',  label: 'Closed' },
   { value: 'expired', label: 'Expired' },
 ];
 
+/* ─── Confirm delete modal ────────────────────────────────────────── */
 function ConfirmModal({ job, onConfirm, onCancel, loading }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
       <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
-        <h3 className="text-base font-semibold text-gray-900 mb-2">Close job listing?</h3>
+        <h3 className="text-base font-semibold text-gray-900 mb-2">Delete job listing?</h3>
         <p className="text-sm text-gray-500 mb-5">
-          <strong>"{job.title}"</strong> will be set to <em>closed</em> and removed from public listings. This cannot be undone via the UI.
+          <strong>"{job.title}"</strong> will be removed from public listings and marked as closed. This cannot be undone via the UI.
         </p>
         <div className="flex gap-3 justify-end">
           <button onClick={onCancel} className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">
@@ -31,7 +32,7 @@ function ConfirmModal({ job, onConfirm, onCancel, loading }) {
             disabled={loading}
             className="px-4 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 transition-colors"
           >
-            {loading ? 'Closing…' : 'Close Job'}
+            {loading ? 'Deleting…' : 'Delete Job'}
           </button>
         </div>
       </div>
@@ -39,50 +40,117 @@ function ConfirmModal({ job, onConfirm, onCancel, loading }) {
   );
 }
 
-function StatusToggle({ job }) {
+/* ─── Renew expired modal ─────────────────────────────────────────── */
+function RenewModal({ job, onConfirm, onCancel, loading }) {
+  const [expiresAt, setExpiresAt] = useState('');
+  const minDate = new Date();
+  minDate.setDate(minDate.getDate() + 1);
+  const minStr = minDate.toISOString().split('T')[0];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+      <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
+        <h3 className="text-base font-semibold text-gray-900 mb-1">Renew expired job</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Set a new expiry date for <strong>"{job.title}"</strong> to republish it as active.
+        </p>
+        <label className="block text-xs font-medium text-gray-700 mb-1.5">New Expiry Date <span className="text-red-500">*</span></label>
+        <input
+          type="date"
+          min={minStr}
+          value={expiresAt}
+          onChange={(e) => setExpiresAt(e.target.value)}
+          className="input-field w-full mb-4"
+        />
+        <div className="flex gap-3 justify-end">
+          <button onClick={onCancel} className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100">
+            Cancel
+          </button>
+          <button
+            onClick={() => expiresAt && onConfirm(expiresAt)}
+            disabled={loading || !expiresAt}
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-60"
+          >
+            {loading ? 'Renewing…' : 'Renew & Publish'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Per-status action buttons ───────────────────────────────────── */
+function StatusActions({ job }) {
   const qc = useQueryClient();
-  const mutation = useMutation({
-    mutationFn: (status) => employerService.changeStatus(job.id, status),
-    onSuccess: () => {
-      toast.success('Status updated');
-      qc.invalidateQueries(['employer', 'jobs']);
+  const navigate = useNavigate();
+
+  const statusMutation = useMutation({
+    mutationFn: ({ status, extra }) => employerService.changeStatus(job.id, status, extra),
+    onSuccess: (_, { label }) => {
+      toast.success(`Job ${label ?? 'updated'}.`);
+      qc.invalidateQueries({ queryKey: ['employer', 'jobs'] });
+      qc.invalidateQueries({ queryKey: ['employer', 'job-stats'] });
     },
     onError: (e) => toast.error(e.message),
   });
 
-  if (job.status === 'closed' || job.status === 'expired') return null;
+  const actions = {
+    draft:   [{ label: 'Publish',  status: 'active',  cls: 'text-green-600' }],
+    active:  [{ label: 'Pause',    status: 'paused',  cls: 'text-amber-600' }],
+    paused:  [{ label: 'Resume',   status: 'active',  cls: 'text-green-600' }],
+    closed:  [{ label: 'Reopen',   status: 'draft',   cls: 'text-primary-600' }],
+    expired: [], // handled by RenewModal in parent
+  };
 
-  const next = job.status === 'active' ? 'paused' : 'active';
-  const label = job.status === 'active' ? 'Pause' : 'Activate';
+  const list = actions[job.status] ?? [];
+  if (!list.length) return null;
 
   return (
-    <button
-      onClick={() => mutation.mutate(next)}
-      disabled={mutation.isPending}
-      className="text-xs text-gray-500 hover:text-gray-800 underline underline-offset-2 transition-colors disabled:opacity-50"
-    >
-      {mutation.isPending ? '…' : label}
-    </button>
+    <>
+      {list.map(({ label, status, cls }) => (
+        <button
+          key={status}
+          onClick={() => statusMutation.mutate({ status, label })}
+          disabled={statusMutation.isPending}
+          className={`text-xs underline underline-offset-2 transition-colors disabled:opacity-50 ${cls}`}
+        >
+          {statusMutation.isPending ? '…' : label}
+        </button>
+      ))}
+    </>
   );
 }
 
+/* ─── Main page ───────────────────────────────────────────────────── */
 export default function EmployerJobs() {
-  const navigate = useNavigate();
   const qc = useQueryClient();
   const [statusFilter, setStatusFilter] = useState('');
-  const [closingJob, setClosingJob] = useState(null);
+  const [deletingJob, setDeletingJob]   = useState(null);
+  const [renewingJob, setRenewingJob]   = useState(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['employer', 'jobs', statusFilter],
     queryFn: () => employerService.listJobs({ status: statusFilter || undefined, limit: 100 }),
   });
 
-  const closeMutation = useMutation({
+  const deleteMutation = useMutation({
     mutationFn: (id) => employerService.closeJob(id),
     onSuccess: () => {
-      toast.success('Job closed successfully.');
-      setClosingJob(null);
-      qc.invalidateQueries(['employer', 'jobs']);
+      toast.success('Job deleted successfully.');
+      setDeletingJob(null);
+      qc.invalidateQueries({ queryKey: ['employer', 'jobs'] });
+      qc.invalidateQueries({ queryKey: ['employer', 'job-stats'] });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const renewMutation = useMutation({
+    mutationFn: ({ id, expiresAt }) => employerService.changeStatus(id, 'active', { expiresAt }),
+    onSuccess: () => {
+      toast.success('Job renewed and published.');
+      setRenewingJob(null);
+      qc.invalidateQueries({ queryKey: ['employer', 'jobs'] });
+      qc.invalidateQueries({ queryKey: ['employer', 'job-stats'] });
     },
     onError: (e) => toast.error(e.message),
   });
@@ -105,7 +173,7 @@ export default function EmployerJobs() {
         </Link>
       </div>
 
-      {/* Filter bar */}
+      {/* Status filter pills */}
       <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
         {STATUS_FILTERS.map((f) => (
           <button
@@ -133,7 +201,6 @@ export default function EmployerJobs() {
                   <div className="h-3 bg-gray-100 rounded w-32" />
                 </div>
                 <div className="h-5 bg-gray-100 rounded-full w-16" />
-                <div className="h-5 bg-gray-100 rounded w-12" />
               </div>
             ))}
           </div>
@@ -166,10 +233,13 @@ export default function EmployerJobs() {
                   {jobs.map((job) => (
                     <tr key={job.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-5 py-4">
-                        <p className="font-semibold text-gray-900 truncate max-w-[200px]">{job.title}</p>
-                        {job.location && (
-                          <p className="text-xs text-gray-400 mt-0.5">{job.location}</p>
-                        )}
+                        <Link
+                          to={`/employer/jobs/${job.id}/review-publish`}
+                          className="font-semibold text-gray-900 hover:text-primary-600 truncate block max-w-[200px] transition-colors"
+                        >
+                          {job.title}
+                        </Link>
+                        {job.location && <p className="text-xs text-gray-400 mt-0.5">{job.location}</p>}
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex flex-col gap-1">
@@ -180,11 +250,25 @@ export default function EmployerJobs() {
                       <td className="px-4 py-4">
                         <div className="flex flex-col gap-1 items-start">
                           <span className={`badge ${jobStatusColor(job.status)}`}>{jobStatusLabel(job.status)}</span>
-                          <StatusToggle job={job} />
+                          {job.status === 'expired' ? (
+                            <button
+                              onClick={() => setRenewingJob(job)}
+                              className="text-xs text-amber-600 underline underline-offset-2"
+                            >
+                              Renew
+                            </button>
+                          ) : (
+                            <StatusActions job={job} />
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-4 text-right font-semibold text-gray-800">
-                        {parseInt(job.applicationsCount, 10) || 0}
+                        <Link
+                          to={`/employer/applications?jobId=${job.id}`}
+                          className="hover:text-primary-600 hover:underline transition-colors"
+                        >
+                          {parseInt(job.applicationsCount, 10) || 0}
+                        </Link>
                       </td>
                       <td className="px-4 py-4 text-right text-gray-500">
                         {job.viewsCount || 0}
@@ -193,9 +277,9 @@ export default function EmployerJobs() {
                         {timeAgo(job.createdAt)}
                       </td>
                       <td className="px-5 py-4">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                           <Link
-                            to={`/employer/jobs/${job.id}/applicants`}
+                            to={`/employer/applications?jobId=${job.id}`}
                             className="p-1.5 rounded-md text-gray-500 hover:text-primary-600 hover:bg-primary-50 transition-colors"
                             title="View applicants"
                           >
@@ -212,17 +296,15 @@ export default function EmployerJobs() {
                               <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
                             </svg>
                           </Link>
-                          {job.status !== 'closed' && (
-                            <button
-                              onClick={() => setClosingJob(job)}
-                              className="p-1.5 rounded-md text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors"
-                              title="Close job"
-                            >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          )}
+                          <button
+                            onClick={() => setDeletingJob(job)}
+                            className="p-1.5 rounded-md text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                            title="Delete job"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                            </svg>
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -238,7 +320,7 @@ export default function EmployerJobs() {
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="min-w-0">
                       <p className="font-semibold text-gray-900 text-sm truncate">{job.title}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{timeAgo(job.createdAt)}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{job.location} · {timeAgo(job.createdAt)}</p>
                     </div>
                     <span className={`badge ${jobStatusColor(job.status)} shrink-0`}>{jobStatusLabel(job.status)}</span>
                   </div>
@@ -249,11 +331,13 @@ export default function EmployerJobs() {
                   <div className="flex items-center justify-between text-xs text-gray-500 border-t border-gray-100 pt-3">
                     <span>{parseInt(job.applicationsCount, 10) || 0} applicants · {job.viewsCount || 0} views</span>
                     <div className="flex items-center gap-3">
-                      <Link to={`/employer/jobs/${job.id}/applicants`} className="text-primary-600 font-medium">Applicants</Link>
+                      <Link to={`/employer/applications?jobId=${job.id}`} className="text-primary-600 font-medium">Applicants</Link>
                       <Link to={`/employer/jobs/${job.id}/edit`} className="text-gray-600 font-medium">Edit</Link>
-                      {job.status !== 'closed' && (
-                        <button onClick={() => setClosingJob(job)} className="text-red-500 font-medium">Close</button>
-                      )}
+                      {job.status === 'expired'
+                        ? <button onClick={() => setRenewingJob(job)} className="text-amber-600 font-medium">Renew</button>
+                        : <StatusActions job={job} />
+                      }
+                      <button onClick={() => setDeletingJob(job)} className="text-red-500 font-medium">Delete</button>
                     </div>
                   </div>
                 </div>
@@ -263,13 +347,23 @@ export default function EmployerJobs() {
         )}
       </div>
 
-      {/* Confirm close modal */}
-      {closingJob && (
+      {/* Delete confirmation modal */}
+      {deletingJob && (
         <ConfirmModal
-          job={closingJob}
-          loading={closeMutation.isPending}
-          onConfirm={() => closeMutation.mutate(closingJob.id)}
-          onCancel={() => setClosingJob(null)}
+          job={deletingJob}
+          loading={deleteMutation.isPending}
+          onConfirm={() => deleteMutation.mutate(deletingJob.id)}
+          onCancel={() => setDeletingJob(null)}
+        />
+      )}
+
+      {/* Renew expired job modal */}
+      {renewingJob && (
+        <RenewModal
+          job={renewingJob}
+          loading={renewMutation.isPending}
+          onConfirm={(expiresAt) => renewMutation.mutate({ id: renewingJob.id, expiresAt })}
+          onCancel={() => setRenewingJob(null)}
         />
       )}
     </div>

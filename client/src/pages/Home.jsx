@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { jobsService } from '../services/jobs.service.js';
 import api from '../services/api.js';
 import JobCard, { JobCardSkeleton } from '../components/jobs/JobCard.jsx';
+import ResumeBuilderShowcase from '../components/resume-builder/ResumeBuilderShowcase.jsx';
 
 /* ─── Category icons ──────────────────────────────────────────────── */
 const CAT_ICONS = {
@@ -98,6 +99,66 @@ export default function Home() {
   const [location, setLocation] = useState('');
   const navigate = useNavigate();
 
+  const [kwSuggs,       setKwSuggs]       = useState([]);
+  const [locSuggs,      setLocSuggs]      = useState([]);
+  const [showKwDrop,    setShowKwDrop]    = useState(false);
+  const [showLocDrop,   setShowLocDrop]   = useState(false);
+  const [kwActiveIdx,   setKwActiveIdx]   = useState(-1);
+  const [locActiveIdx,  setLocActiveIdx]  = useState(-1);
+  const kwRef  = useRef(null);
+  const locRef = useRef(null);
+
+  useEffect(() => {
+    if (keyword.trim().length < 2) { setKwSuggs([]); setShowKwDrop(false); return; }
+    const t = setTimeout(async () => {
+      try {
+        const r = await api.get('/jobs/suggestions', { params: { q: keyword, type: 'keyword' } });
+        const s = r.data?.suggestions ?? [];
+        setKwSuggs(s);
+        setShowKwDrop(s.length > 0);
+        setKwActiveIdx(-1);
+      } catch {}
+    }, 280);
+    return () => clearTimeout(t);
+  }, [keyword]);
+
+  useEffect(() => {
+    if (location.trim().length < 2) { setLocSuggs([]); setShowLocDrop(false); return; }
+    const t = setTimeout(async () => {
+      try {
+        const r = await api.get('/jobs/suggestions', { params: { q: location, type: 'location' } });
+        const s = r.data?.suggestions ?? [];
+        setLocSuggs(s);
+        setShowLocDrop(s.length > 0);
+        setLocActiveIdx(-1);
+      } catch {}
+    }, 280);
+    return () => clearTimeout(t);
+  }, [location]);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (kwRef.current  && !kwRef.current.contains(e.target))  setShowKwDrop(false);
+      if (locRef.current && !locRef.current.contains(e.target)) setShowLocDrop(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const handleKwKeyDown = (e) => {
+    if (e.key === 'ArrowDown')  { e.preventDefault(); setKwActiveIdx(i => Math.min(i + 1, kwSuggs.length - 1)); }
+    else if (e.key === 'ArrowUp')   { e.preventDefault(); setKwActiveIdx(i => Math.max(i - 1, -1)); }
+    else if (e.key === 'Enter' && kwActiveIdx >= 0)  { e.preventDefault(); setKeyword(kwSuggs[kwActiveIdx]); setShowKwDrop(false); }
+    else if (e.key === 'Escape') setShowKwDrop(false);
+  };
+
+  const handleLocKeyDown = (e) => {
+    if (e.key === 'ArrowDown')  { e.preventDefault(); setLocActiveIdx(i => Math.min(i + 1, locSuggs.length - 1)); }
+    else if (e.key === 'ArrowUp')   { e.preventDefault(); setLocActiveIdx(i => Math.max(i - 1, -1)); }
+    else if (e.key === 'Enter' && locActiveIdx >= 0) { e.preventDefault(); setLocation(locSuggs[locActiveIdx]); setShowLocDrop(false); }
+    else if (e.key === 'Escape') setShowLocDrop(false);
+  };
+
   const handleSearch = (e) => {
     e.preventDefault();
     const p = new URLSearchParams();
@@ -144,7 +205,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════
           HERO SECTION
       ══════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary-800 via-primary-700 to-primary-600">
+      <section className="relative bg-gradient-to-br from-primary-800 via-primary-700 to-primary-600">
         {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-white/5" />
@@ -173,7 +234,7 @@ export default function Home() {
             className="bg-white rounded-2xl p-2 flex flex-col sm:flex-row gap-2 shadow-2xl max-w-3xl mx-auto"
           >
             {/* Job title input */}
-            <div className="flex items-center gap-3 flex-1 px-4 py-1">
+            <div ref={kwRef} className="flex items-center gap-3 flex-1 px-4 py-1 relative">
               <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -182,15 +243,36 @@ export default function Home() {
                 placeholder="Job title, keyword, or company"
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
+                onKeyDown={handleKwKeyDown}
+                onFocus={() => keyword.trim().length >= 2 && kwSuggs.length > 0 && setShowKwDrop(true)}
                 className="flex-1 text-gray-800 placeholder-gray-400 text-sm bg-transparent outline-none py-2"
               />
+              {showKwDrop && kwSuggs.length > 0 && (
+                <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden py-1">
+                  {kwSuggs.map((s, i) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onMouseDown={() => { setKeyword(s); setShowKwDrop(false); }}
+                      className={`w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                        i === kwActiveIdx ? 'bg-primary-50 text-primary-700' : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Divider */}
             <div className="hidden sm:block w-px bg-gray-200 my-2" />
 
             {/* Location input */}
-            <div className="flex items-center gap-3 flex-1 px-4 py-1">
+            <div ref={locRef} className="flex items-center gap-3 flex-1 px-4 py-1 relative">
               <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -200,8 +282,30 @@ export default function Home() {
                 placeholder="City, state, or remote"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
+                onKeyDown={handleLocKeyDown}
+                onFocus={() => location.trim().length >= 2 && locSuggs.length > 0 && setShowLocDrop(true)}
                 className="flex-1 text-gray-800 placeholder-gray-400 text-sm bg-transparent outline-none py-2"
               />
+              {showLocDrop && locSuggs.length > 0 && (
+                <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden py-1">
+                  {locSuggs.map((s, i) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onMouseDown={() => { setLocation(s); setShowLocDrop(false); }}
+                      className={`w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                        i === locActiveIdx ? 'bg-primary-50 text-primary-700' : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <button
@@ -362,13 +466,18 @@ export default function Home() {
             <p className="section-subtitle">Expert tips to help you succeed in your job search</p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <AdviceCard icon="📝" title="Resume Writing Tips" desc="Craft a resume that stands out with our expert guide to formatting and keywords." to="/jobs" />
-            <AdviceCard icon="🎯" title="Ace Your Interview" desc="Prepare for common questions and make a lasting impression on hiring managers." to="/jobs" />
-            <AdviceCard icon="💡" title="Career Switching Guide" desc="Planning a career change? Learn how to transfer your skills to a new field." to="/jobs" />
-            <AdviceCard icon="💰" title="Salary Negotiation" desc="Know your worth and negotiate confidently with our step-by-step playbook." to="/jobs" />
+            <AdviceCard icon="📝" title="Resume Writing Tips" desc="Craft a resume that stands out with our expert guide to formatting and keywords." to="/blog/resume-writing-tips" />
+            <AdviceCard icon="🎯" title="Ace Your Interview" desc="Prepare for common questions and make a lasting impression on hiring managers." to="/blog/ace-your-interview" />
+            <AdviceCard icon="💡" title="Career Switching Guide" desc="Planning a career change? Learn how to transfer your skills to a new field." to="/blog/career-switching-guide" />
+            <AdviceCard icon="💰" title="Salary Negotiation" desc="Know your worth and negotiate confidently with our step-by-step playbook." to="/blog/salary-negotiation" />
           </div>
         </div>
       </section>
+
+      {/* ══════════════════════════════════════════════════
+          RESUME BUILDER SHOWCASE
+      ══════════════════════════════════════════════════ */}
+      <ResumeBuilderShowcase />
 
       {/* ══════════════════════════════════════════════════
           RESUME CTA

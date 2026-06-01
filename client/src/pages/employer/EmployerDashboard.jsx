@@ -51,29 +51,35 @@ export default function EmployerDashboard() {
   const { planId, isLoading: billingLoading } = useBilling();
   const isFreePlan = !billingLoading && ['starter', 'free'].includes(planId);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['employer', 'jobs'],
-    queryFn:  () => employerService.listJobs({ limit: 100 }),
+  // Real stats from DB aggregation
+  const { data: statsData, isLoading: statsLoading } = useQuery({
+    queryKey: ['employer', 'job-stats'],
+    queryFn:  () => employerService.getJobStats(),
+    staleTime: 60 * 1000,
   });
 
-  const jobs = data?.data?.jobs ?? [];
+  // Recent jobs for the feed (limited to 10, sorted newest first)
+  const { data: recentData, isLoading: recentLoading } = useQuery({
+    queryKey: ['employer', 'jobs', 'recent'],
+    queryFn:  () => employerService.listJobs({ limit: 10 }),
+  });
+
+  const isLoading = statsLoading || recentLoading;
+  const dbStats = statsData?.data?.stats ?? {};
+  const recentJobs = recentData?.data?.jobs ?? [];
 
   const stats = {
-    activeJobs:      jobs.filter((j) => j.status === 'active').length,
-    totalApplicants: jobs.reduce((s, j) => s + (parseInt(j.applicationsCount, 10) || 0), 0),
-    totalViews:      jobs.reduce((s, j) => s + (j.viewsCount || 0), 0),
-    draftJobs:       jobs.filter((j) => j.status === 'draft').length,
+    activeJobs:      parseInt(dbStats.activeJobs,      10) || 0,
+    totalApplicants: parseInt(dbStats.totalApplicants, 10) || 0,
+    totalViews:      parseInt(dbStats.totalViews,      10) || 0,
+    draftJobs:       parseInt(dbStats.draftJobs,       10) || 0,
   };
 
-  const recentJobs = [...jobs]
-    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
-    .slice(0, 6);
-
-  const activeJobCount = jobs.filter((j) => ['draft', 'active', 'paused'].includes(j.status)).length;
+  const activeJobCount = (stats.activeJobs + (parseInt(dbStats.draftJobs, 10) || 0) + (parseInt(dbStats.pausedJobs, 10) || 0));
   const jobLimit       = PLAN_LIMITS[planId] ?? 5;
   const usagePct       = Math.min(100, Math.round((activeJobCount / jobLimit) * 100));
 
-  const topJob = [...jobs].sort((a, b) => (parseInt(b.applicationsCount, 10) || 0) - (parseInt(a.applicationsCount, 10) || 0))[0];
+  const topJob = [...recentJobs].sort((a, b) => (parseInt(b.applicationsCount, 10) || 0) - (parseInt(a.applicationsCount, 10) || 0))[0];
 
   return (
     <div className="space-y-6">
@@ -166,7 +172,7 @@ export default function EmployerDashboard() {
                     {job.title?.[0]?.toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <Link to={`/employer/jobs/${job.id}/applicants`}
+                    <Link to={`/employer/jobs/${job.id}/review-publish`}
                       className="text-sm font-semibold text-gray-900 hover:text-primary-600 truncate block transition-colors">
                       {job.title}
                     </Link>
@@ -235,7 +241,7 @@ export default function EmployerDashboard() {
                 </span>
                 <span>{topJob.viewsCount || 0} views</span>
               </div>
-              <Link to={`/employer/jobs/${topJob.id}/applicants`}
+              <Link to={`/employer/applications?jobId=${topJob.id}`}
                 className="mt-3 text-xs font-semibold text-primary-600 hover:text-primary-700 flex items-center gap-1">
                 Review applicants
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>

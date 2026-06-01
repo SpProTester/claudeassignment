@@ -97,6 +97,7 @@ export async function extractPdfText(filePath) {
  * Deletes a file from disk; silently ignores ENOENT (already deleted).
  */
 export async function deleteFile(filePath) {
+  if (!filePath) return;
   try {
     await fs.unlink(filePath);
   } catch (err) {

@@ -25,6 +25,22 @@ const toSlug = (str) =>
     .replace(/-+/g, '-')
     .slice(0, 80);
 
+const resolveSkillNames = async (names) => {
+  if (!names?.length) return [];
+  return Promise.all(
+    names.map(async (raw) => {
+      const name = String(raw).trim().slice(0, 100);
+      if (!name) return null;
+      const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const [skill] = await Skill.findOrCreate({
+        where: { name },
+        defaults: { name, slug: `${baseSlug}-${Date.now().toString(36).slice(-5)}` },
+      });
+      return skill;
+    })
+  ).then((skills) => skills.filter(Boolean));
+};
+
 const generateUniqueSlug = async (title, companyName) => {
   const base = toSlug(`${title} ${companyName}`);
   let slug = base;
@@ -38,6 +54,37 @@ const generateUniqueSlug = async (title, companyName) => {
 
 // Resolve the employer profile for the authenticated user (admin may impersonate via body)
 const resolveEmployer = async (userId) => EmployerProfile.findOne({ where: { userId } });
+
+// GET /api/employer/jobs/stats
+export const getEmployerJobStats = async (req, res, next) => {
+  try {
+    const employer = await resolveEmployer(req.user.id);
+    if (!employer) return sendError(res, 'Company profile not found.', 404);
+
+    const [row] = await sequelize.query(
+      `SELECT
+         COUNT(*) FILTER (WHERE status = 'active')::INT  AS "activeJobs",
+         COUNT(*) FILTER (WHERE status = 'draft')::INT   AS "draftJobs",
+         COUNT(*) FILTER (WHERE status = 'paused')::INT  AS "pausedJobs",
+         COUNT(*) FILTER (WHERE status = 'closed')::INT  AS "closedJobs",
+         COUNT(*) FILTER (WHERE status = 'expired')::INT AS "expiredJobs",
+         COALESCE(SUM(views_count), 0)::INT              AS "totalViews",
+         (
+           SELECT COALESCE(COUNT(*), 0)::INT
+           FROM applications a
+           JOIN job_listings j ON j.id = a.job_id
+           WHERE j.employer_id = :eid
+         ) AS "totalApplicants"
+       FROM job_listings
+       WHERE employer_id = :eid`,
+      { replacements: { eid: employer.id }, type: sequelize.QueryTypes.SELECT }
+    );
+
+    sendSuccess(res, { stats: row ?? {} });
+  } catch (err) {
+    next(err);
+  }
+};
 
 // POST /api/employer/jobs
 export const createEmployerJob = async (req, res, next) => {
@@ -61,11 +108,20 @@ export const createEmployerJob = async (req, res, next) => {
     }
 
     const slug = await generateUniqueSlug(req.body.title, employer.companyName);
-    const { skillIds, ...jobData } = req.body;
+    const { skillIds, skillNames, requirements, benefits, ...jobData } = req.body;
 
-    const job = await JobListing.create({ ...jobData, employerId: employer.id, slug });
+    const job = await JobListing.create({
+      ...jobData,
+      requirements: requirements ?? null,
+      benefits: benefits ?? null,
+      employerId: employer.id,
+      slug,
+    });
 
-    if (skillIds?.length) {
+    const skillInstances = await resolveSkillNames(skillNames);
+    if (skillInstances.length) {
+      await job.setSkills(skillInstances);
+    } else if (skillIds?.length) {
       await job.setSkills(skillIds);
     }
 
@@ -180,7 +236,17 @@ export const updateEmployerJob = async (req, res, next) => {
     if (!job) return sendError(res, 'Job not found or not authorised.', 404);
 
     // Strip fields that must never be set externally
-    const { skillIds, slug: _s, employerId: _e, status: _st, ...updates } = req.body;
+    const { skillIds, skillNames, slug: _s, employerId: _e, ...updates } = req.body;
+
+    // Only allow safe status transitions via the form (not expired — that requires explicit renewal)
+    const FORM_STATUSES = ['draft', 'active', 'paused'];
+    if (updates.status && !FORM_STATUSES.includes(updates.status)) {
+      delete updates.status;
+    }
+
+    // Normalise optional text fields
+    if ('requirements' in updates) updates.requirements = updates.requirements || null;
+    if ('benefits' in updates) updates.benefits = updates.benefits || null;
 
     // Regenerate slug only when the title actually changes
     if (updates.title && updates.title !== job.title) {
@@ -189,7 +255,10 @@ export const updateEmployerJob = async (req, res, next) => {
 
     await job.update(updates);
 
-    if (skillIds !== undefined) {
+    if (skillNames !== undefined) {
+      const skillInstances = await resolveSkillNames(skillNames);
+      await job.setSkills(skillInstances);
+    } else if (skillIds !== undefined) {
       await job.setSkills(skillIds ?? []);
     }
 
@@ -238,15 +307,19 @@ export const changeJobStatus = async (req, res, next) => {
     });
     if (!job) return sendError(res, 'Job not found or not authorised.', 404);
 
-    const { status } = req.body;
+    const { status, expiresAt } = req.body;
 
-    // Prevent reactivating an expired listing without extending the expiry date first
-    if (status === 'active' && job.status === 'expired') {
-      return sendError(
-        res,
-        'Cannot reactivate an expired job. Update the expiry date (expiresAt) via PUT first.',
-        422
-      );
+    // Expired jobs can only be renewed by providing a new future expiry date
+    if (job.status === 'expired' && status === 'active') {
+      if (!expiresAt) {
+        return sendError(res, 'Provide a new expiresAt date to renew an expired job.', 422);
+      }
+      const newExpiry = new Date(expiresAt);
+      if (newExpiry <= new Date()) {
+        return sendError(res, 'The new expiry date must be in the future.', 422);
+      }
+      await job.update({ status: 'active', expiresAt: newExpiry });
+      return sendSuccess(res, { job }, 'Job renewed and published.');
     }
 
     await job.update({ status });

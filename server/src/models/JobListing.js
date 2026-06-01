@@ -44,6 +44,14 @@ export default (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: 'mid',
       },
+      requirements: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      benefits: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
       location: {
         type: DataTypes.STRING(255),
         allowNull: true,

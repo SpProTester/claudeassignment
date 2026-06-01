@@ -6,6 +6,7 @@ import {
   getJobBySlug,
   getCategories,
   getTrendingKeywords,
+  getSuggestions,
 } from '../controllers/job.search.controller.js';
 
 import {
@@ -26,6 +27,7 @@ const router = Router();
 router.get('/', searchJobs);
 router.get('/categories', getCategories);
 router.get('/trending', getTrendingKeywords);
+router.get('/suggestions', getSuggestions);
 router.get('/:slug', getJobBySlug);
 
 /* ── Employer / admin only ──────────────────────────────────── */

@@ -7,7 +7,7 @@ import { virusScan, extractPdfText, deleteFile, toPublicUrl } from '../services/
 /** Attaches a computed `url` field to each resume plain object. */
 function withUrl(resume) {
   const obj = resume.toJSON ? resume.toJSON() : { ...resume };
-  obj.url = toPublicUrl(obj.storagePath);
+  obj.url = obj.storagePath ? toPublicUrl(obj.storagePath) : null;
   return obj;
 }
 
@@ -98,7 +98,7 @@ export const deleteResume = async (req, res, next) => {
     const storagePath = resume.storagePath;
 
     await resume.destroy();
-    await deleteFile(storagePath);
+    if (storagePath) await deleteFile(storagePath);
 
     // If the deleted resume was the default, promote the most recent remaining one
     if (wasDefault) {

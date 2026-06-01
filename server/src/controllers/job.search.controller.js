@@ -266,6 +266,56 @@ export const getTrendingKeywords = async (req, res, next) => {
 };
 
 /**
+ * GET /api/jobs/suggestions?q=<text>&type=keyword|location
+ * Returns up to 8 autocomplete suggestions from live job titles/companies or locations.
+ */
+export const getSuggestions = async (req, res, next) => {
+  try {
+    const q    = (req.query.q ?? '').trim();
+    const type = req.query.type === 'location' ? 'location' : 'keyword';
+
+    if (q.length < 2) return sendSuccess(res, { suggestions: [] });
+
+    let sql, bind;
+
+    if (type === 'location') {
+      sql = `
+        SELECT DISTINCT location AS suggestion
+        FROM   job_listings
+        WHERE  status   = 'active'
+          AND  location IS NOT NULL
+          AND  location <> ''
+          AND  location ILIKE $1
+        ORDER  BY suggestion
+        LIMIT  8
+      `;
+      bind = [`%${q}%`];
+    } else {
+      sql = `
+        SELECT suggestion FROM (
+          SELECT DISTINCT title AS suggestion
+          FROM   job_listings
+          WHERE  status = 'active'
+            AND  title  ILIKE $1
+          UNION
+          SELECT DISTINCT company_name AS suggestion
+          FROM   employer_profiles
+          WHERE  company_name ILIKE $1
+        ) combined
+        ORDER  BY suggestion
+        LIMIT  8
+      `;
+      bind = [`%${q}%`];
+    }
+
+    const rows = await sequelize.query(sql, { bind, type: QueryTypes.SELECT });
+    sendSuccess(res, { suggestions: rows.map(r => r.suggestion).filter(Boolean) });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
  * GET /api/jobs/:slug
  * Single job detail by slug. Increments views_count atomically via CTE.
  */

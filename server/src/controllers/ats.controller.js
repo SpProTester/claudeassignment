@@ -298,6 +298,115 @@ export const sendApplicantEmail = async (req, res, next) => {
   }
 };
 
+// ── GET /employer/applications/summary ───────────────────────────────────────
+
+export const getApplicationsSummary = async (req, res, next) => {
+  try {
+    const employer = await EmployerProfile.findOne({ where: { userId: req.user.id } });
+    if (!employer) return sendError(res, 'Company profile not found.', 404);
+
+    const jobRows = await JobListing.findAll({ where: { employerId: employer.id }, attributes: ['id'] });
+    const jobIds  = jobRows.map((j) => j.id);
+
+    const empty = { total: 0, ...Object.fromEntries(ATS_STAGES.map((s) => [s, 0])) };
+    if (!jobIds.length) return sendSuccess(res, { summary: empty });
+
+    const stageCounts = await Application.findAll({
+      where:      { jobId: { [Op.in]: jobIds } },
+      attributes: ['atsStage', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
+      group:      ['atsStage'],
+      raw:        true,
+    });
+
+    const summary = { ...empty };
+    stageCounts.forEach(({ atsStage, count }) => {
+      const n = parseInt(count, 10);
+      summary[atsStage] = n;
+      summary.total    += n;
+    });
+
+    sendSuccess(res, { summary });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ── GET /employer/applications ────────────────────────────────────────────────
+
+export const listAllApplications = async (req, res, next) => {
+  try {
+    const employer = await EmployerProfile.findOne({ where: { userId: req.user.id } });
+    if (!employer) return sendError(res, 'Company profile not found.', 404);
+
+    const jobRows = await JobListing.findAll({ where: { employerId: employer.id }, attributes: ['id'] });
+    const jobIds  = jobRows.map((j) => j.id);
+
+    if (!jobIds.length) {
+      return sendSuccess(res, { applications: [], pagination: { total: 0, page: 1, pages: 0, limit: 20 } });
+    }
+
+    const { atsStage, jobId, search, dateFrom, dateTo, page = 1, limit = 20 } = req.query;
+    const parsedPage  = Math.max(1, parseInt(page, 10));
+    const parsedLimit = Math.min(100, Math.max(1, parseInt(limit, 10)));
+    const offset = (parsedPage - 1) * parsedLimit;
+
+    const where = { jobId: { [Op.in]: jobIds } };
+    if (atsStage) where.atsStage = atsStage;
+    if (jobId && jobIds.includes(jobId)) where.jobId = jobId;
+    if (dateFrom || dateTo) {
+      where.createdAt = {};
+      if (dateFrom) where.createdAt[Op.gte] = new Date(dateFrom);
+      if (dateTo)   where.createdAt[Op.lte] = new Date(dateTo);
+    }
+
+    const seekerWhere = search
+      ? { [Op.or]: [
+          { fullName: { [Op.iLike]: `%${search}%` } },
+          { email:    { [Op.iLike]: `%${search}%` } },
+        ] }
+      : undefined;
+
+    const { count, rows: applications } = await Application.findAndCountAll({
+      where,
+      include: [
+        {
+          model: User,
+          as:    'seeker',
+          attributes: ['id', 'fullName', 'email'],
+          ...(seekerWhere ? { where: seekerWhere } : {}),
+          include: [{
+            model:      SeekerProfile,
+            as:         'seekerProfile',
+            attributes: ['headline', 'location', 'experienceYears', 'openToWork'],
+          }],
+        },
+        {
+          model:    JobListing,
+          as:       'job',
+          attributes: ['id', 'title', 'jobType', 'workMode', 'location'],
+          required: true,
+        },
+        {
+          model:      Resume,
+          as:         'resume',
+          attributes: ['id', 'fileName', 'label'],
+        },
+      ],
+      order:    [['createdAt', 'DESC']],
+      limit:    parsedLimit,
+      offset,
+      distinct: true,
+    });
+
+    sendSuccess(res, {
+      applications,
+      pagination: { total: count, page: parsedPage, pages: Math.ceil(count / parsedLimit), limit: parsedLimit },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ── GET /employer/analytics/:jobId ────────────────────────────────────────────
 
 export const getJobAnalytics = async (req, res, next) => {

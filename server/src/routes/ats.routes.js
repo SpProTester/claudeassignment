@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { body, param, query } from 'express-validator';
 import {
   listApplicants,
+  listAllApplications,
+  getApplicationsSummary,
   updateAtsStage,
   addNote,
   setRating,
@@ -22,6 +24,26 @@ router.use(protect, restrictTo('employer', 'admin'));
 const appId  = param('id').isUUID(4).withMessage('Application ID must be a valid UUID.');
 const jobId  = param('id').isUUID(4).withMessage('Job ID must be a valid UUID.');
 const jobIdA = param('jobId').isUUID(4).withMessage('Job ID must be a valid UUID.');
+
+// ─── GET /employer/applications/summary ──────────────────────────────────────
+// Must be registered before /applications (prefix match) and before /jobs/:id
+router.get('/applications/summary', getApplicationsSummary);
+
+// ─── GET /employer/applications ──────────────────────────────────────────────
+router.get(
+  '/applications',
+  [
+    query('atsStage').optional().isIn(ATS_STAGES).withMessage(`atsStage must be one of: ${ATS_STAGES.join(', ')}.`),
+    query('jobId').optional().isUUID(4).withMessage('jobId must be a valid UUID.'),
+    query('search').optional().trim().isLength({ max: 100 }),
+    query('page').optional().isInt({ min: 1 }),
+    query('limit').optional().isInt({ min: 1, max: 100 }),
+    query('dateFrom').optional().isISO8601(),
+    query('dateTo').optional().isISO8601(),
+  ],
+  validate,
+  listAllApplications
+);
 
 // ─── GET /employer/jobs/:id/applicants ───────────────────────────────────────
 // NOTE: mounted at /employer — so the full path is /api/employer/jobs/:id/applicants

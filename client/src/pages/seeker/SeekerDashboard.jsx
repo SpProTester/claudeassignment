@@ -136,7 +136,7 @@ export default function SeekerDashboard() {
                     {app.job?.employer?.companyName?.[0] ?? 'J'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <Link to={`/jobs/${app.job?.id}`} className="text-sm font-semibold text-gray-900 hover:text-primary-600 truncate block transition-colors">
+                    <Link to={`/jobs/${app.job?.slug}`} className="text-sm font-semibold text-gray-900 hover:text-primary-600 truncate block transition-colors">
                       {app.job?.title ?? 'Untitled Job'}
                     </Link>
                     <p className="text-xs text-gray-500 mt-0.5">{app.job?.employer?.companyName}</p>

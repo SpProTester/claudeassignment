@@ -180,7 +180,7 @@ export default function Jobs() {
     setSearchParams(prev => {
       const next = new URLSearchParams(prev);
       if (value) next.set(key, value); else next.delete(key);
-      next.delete('page');
+      if (key !== 'page') next.delete('page');
       return next;
     }, { replace });
   }, [setSearchParams]);

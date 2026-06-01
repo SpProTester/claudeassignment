@@ -7,6 +7,7 @@ import {
   updateEmployerJob,
   softDeleteJob,
   changeJobStatus,
+  getEmployerJobStats,
 } from '../controllers/employer.jobs.controller.js';
 import { protect, restrictTo } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validate.middleware.js';
@@ -20,7 +21,7 @@ router.use(protect, restrictTo('employer', 'admin'));
 const JOB_TYPES = ['full-time', 'part-time', 'contract', 'freelance', 'internship'];
 const WORK_MODES = ['onsite', 'remote', 'hybrid'];
 const EXP_LEVELS = ['entry', 'mid', 'senior', 'lead', 'executive'];
-const MUTABLE_STATUSES = ['draft', 'active', 'paused', 'closed'];
+const MUTABLE_STATUSES = ['draft', 'active', 'paused', 'closed', 'expired'];
 
 // ─── Reusable param validator ────────────────────────────────────────────────
 const idParam = param('id').isUUID(4).withMessage('Job ID must be a valid UUID.');
@@ -62,6 +63,10 @@ const createValidators = [
       if (val && val <= new Date()) throw new Error('expiresAt must be a future date.');
       return true;
     }),
+  body('requirements')
+    .optional({ nullable: true }).trim(),
+  body('benefits')
+    .optional({ nullable: true }).trim(),
   body('skillIds')
     .optional().isArray().withMessage('skillIds must be an array.'),
   body('skillIds.*')
@@ -104,6 +109,10 @@ const updateValidators = [
       if (val && val <= new Date()) throw new Error('expiresAt must be a future date.');
       return true;
     }),
+  body('requirements')
+    .optional({ nullable: true }).trim(),
+  body('benefits')
+    .optional({ nullable: true }).trim(),
   body('skillIds')
     .optional().isArray().withMessage('skillIds must be an array.'),
   body('skillIds.*')
@@ -111,6 +120,9 @@ const updateValidators = [
 ];
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
+
+// GET /stats — must be registered before /:id so "stats" isn't treated as a UUID
+router.get('/stats', getEmployerJobStats);
 
 // PUT /:id/status must be registered BEFORE /:id to prevent Express matching
 // "status" as the :id segment on the generic route
@@ -121,6 +133,9 @@ router.put(
     body('status')
       .isIn(MUTABLE_STATUSES)
       .withMessage(`status must be one of: ${MUTABLE_STATUSES.join(', ')}.`),
+    body('expiresAt')
+      .optional({ nullable: true })
+      .isISO8601().toDate().withMessage('expiresAt must be a valid ISO 8601 date.'),
   ],
   validate,
   changeJobStatus
