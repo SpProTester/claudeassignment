@@ -1,6 +1,15 @@
 import { Op } from 'sequelize';
-import { sequelize, JobListing, EmployerProfile, Application, Skill } from '../models/index.js';
+import { sequelize, JobListing, JobCategory, EmployerProfile, Application, Skill } from '../models/index.js';
 import { sendSuccess, sendError } from '../utils/response.utils.js';
+import { inferCategorySlug } from '../utils/categorize.js';
+
+/** Resolves a category UUID from a job title, or returns null if no match. */
+async function resolveCategoryId(title) {
+  const slug = inferCategorySlug(title);
+  if (!slug) return null;
+  const cat = await JobCategory.findOne({ where: { slug }, attributes: ['id'] });
+  return cat?.id ?? null;
+}
 
 // Active job limits per plan — Infinity means unlimited.
 // Legacy plan names (free/basic/premium) are kept for backward compatibility.
@@ -62,6 +71,11 @@ export const createEmployerJob = async (req, res, next) => {
 
     const slug = await generateUniqueSlug(req.body.title, employer.companyName);
     const { skillIds, ...jobData } = req.body;
+
+    // Auto-assign category from title if not explicitly provided
+    if (!jobData.categoryId) {
+      jobData.categoryId = await resolveCategoryId(req.body.title);
+    }
 
     const job = await JobListing.create({ ...jobData, employerId: employer.id, slug });
 
@@ -182,9 +196,12 @@ export const updateEmployerJob = async (req, res, next) => {
     // Strip fields that must never be set externally
     const { skillIds, slug: _s, employerId: _e, status: _st, ...updates } = req.body;
 
-    // Regenerate slug only when the title actually changes
+    // Regenerate slug and re-infer category when the title actually changes
     if (updates.title && updates.title !== job.title) {
       updates.slug = await generateUniqueSlug(updates.title, employer.companyName);
+      if (updates.categoryId === undefined) {
+        updates.categoryId = await resolveCategoryId(updates.title);
+      }
     }
 
     await job.update(updates);
