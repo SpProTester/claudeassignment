@@ -14,7 +14,7 @@ const ARTICLES = [
     category: 'Resume',
     title: '10 Resume Mistakes That Get You Rejected Instantly',
     readTime: '5 min read',
-    image: 'https://picsum.photos/seed/resume-laptop/1200/500',
+    image: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1200&h=500&fit=crop&auto=format',
     author: { name: 'Sarah Mitchell', role: 'Career Expert', avatar: 'https://i.pravatar.cc/48?img=47' },
     body: [
       {
@@ -68,7 +68,7 @@ const ARTICLES = [
     category: 'Interview',
     title: 'How to Answer "Tell Me About Yourself" (With Examples)',
     readTime: '4 min read',
-    image: 'https://picsum.photos/seed/interview-meeting/1200/500',
+    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1200&h=500&fit=crop&auto=format',
     author: { name: 'James Chen', role: 'Senior Recruiter', avatar: 'https://i.pravatar.cc/48?img=12' },
     body: [
       {
@@ -98,7 +98,7 @@ const ARTICLES = [
     category: 'Salary',
     title: 'How to Negotiate Your Salary Without Feeling Awkward',
     readTime: '6 min read',
-    image: 'https://picsum.photos/seed/salary-negotiation/1200/500',
+    image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200&h=500&fit=crop&auto=format',
     author: { name: 'Emily Rodriguez', role: 'HR Consultant', avatar: 'https://i.pravatar.cc/48?img=25' },
     body: [
       {
@@ -132,7 +132,7 @@ const ARTICLES = [
     category: 'Job Search',
     title: "The Hidden Job Market: How to Find Jobs That Aren't Posted",
     readTime: '7 min read',
-    image: 'https://picsum.photos/seed/networking-office/1200/500',
+    image: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&h=500&fit=crop&auto=format',
     author: { name: 'Marcus Johnson', role: 'Career Coach', avatar: 'https://i.pravatar.cc/48?img=15' },
     body: [
       {
@@ -166,7 +166,7 @@ const ARTICLES = [
     category: 'Career Growth',
     title: 'How to Ask for a Promotion (And Actually Get It)',
     readTime: '5 min read',
-    image: 'https://picsum.photos/seed/career-growth/1200/500',
+    image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=1200&h=500&fit=crop&auto=format',
     author: { name: 'Sarah Mitchell', role: 'Career Expert', avatar: 'https://i.pravatar.cc/48?img=47' },
     body: [
       {
@@ -196,7 +196,7 @@ const ARTICLES = [
     category: 'Interview',
     title: 'The STAR Method: Ace Every Behavioral Interview Question',
     readTime: '4 min read',
-    image: 'https://picsum.photos/seed/interview-panel/1200/500',
+    image: 'https://images.unsplash.com/photo-1551836022-4c4c79ecde51?w=1200&h=500&fit=crop&auto=format',
     author: { name: 'James Chen', role: 'Senior Recruiter', avatar: 'https://i.pravatar.cc/48?img=12' },
     body: [
       {
@@ -230,7 +230,7 @@ const ARTICLES = [
     category: 'Resume',
     title: 'How to Write a Cover Letter That Gets Read',
     readTime: '4 min read',
-    image: 'https://picsum.photos/seed/cover-letter-desk/1200/500',
+    image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1200&h=500&fit=crop&auto=format',
     author: { name: 'Emily Rodriguez', role: 'HR Consultant', avatar: 'https://i.pravatar.cc/48?img=25' },
     body: [
       {
@@ -260,7 +260,7 @@ const ARTICLES = [
     category: 'Career Growth',
     title: "Switching Careers? Here's Your 90-Day Plan",
     readTime: '8 min read',
-    image: 'https://picsum.photos/seed/career-change/1200/500',
+    image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&h=500&fit=crop&auto=format',
     author: { name: 'Priya Patel', role: 'Career Strategist', avatar: 'https://i.pravatar.cc/48?img=32' },
     body: [
       {
@@ -290,7 +290,7 @@ const ARTICLES = [
     category: 'Job Search',
     title: 'LinkedIn Profile Optimisation: The Complete 2025 Guide',
     readTime: '6 min read',
-    image: 'https://picsum.photos/seed/linkedin-laptop/1200/500',
+    image: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&h=500&fit=crop&auto=format',
     author: { name: 'Marcus Johnson', role: 'Career Coach', avatar: 'https://i.pravatar.cc/48?img=15' },
     body: [
       {

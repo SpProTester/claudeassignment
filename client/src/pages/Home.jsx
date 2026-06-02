@@ -56,7 +56,8 @@ const TESTIMONIALS = [
 
 const ADVICE_CARDS = [
   {
-    image: 'https://picsum.photos/seed/resume-laptop/600/380',
+    // Resume document being reviewed on a desk
+    image: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=600&h=380&fit=crop&auto=format',
     label: 'RESUME GUIDES',
     labelColor: 'text-teal-600',
     title: 'Resume Writing Tips',
@@ -64,7 +65,8 @@ const ADVICE_CARDS = [
     to: '/career-advice/resume-mistakes',
   },
   {
-    image: 'https://picsum.photos/seed/interview-meeting/600/380',
+    // One-on-one job interview across a table
+    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&h=380&fit=crop&auto=format',
     label: 'INTERVIEWING',
     labelColor: 'text-blue-600',
     title: 'Ace Your Interview',
@@ -72,7 +74,8 @@ const ADVICE_CARDS = [
     to: '/career-advice/tell-me-about-yourself',
   },
   {
-    image: 'https://picsum.photos/seed/career-change/600/380',
+    // Person planning career path with laptop
+    image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&h=380&fit=crop&auto=format',
     label: 'CAREER GROWTH',
     labelColor: 'text-violet-600',
     title: 'Career Switching Guide',
@@ -80,7 +83,8 @@ const ADVICE_CARDS = [
     to: '/career-advice/career-change-90-day-plan',
   },
   {
-    image: 'https://picsum.photos/seed/salary-negotiation/600/380',
+    // Business handshake / salary deal
+    image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600&h=380&fit=crop&auto=format',
     label: 'SALARY GUIDES',
     labelColor: 'text-emerald-600',
     title: 'Salary Negotiation',

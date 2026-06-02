@@ -25,7 +25,8 @@ const ARTICLES = [
     title: '10 Resume Mistakes That Get You Rejected Instantly',
     excerpt: 'Hiring managers spend an average of 7 seconds on a resume. Here are the biggest mistakes that send yours to the trash — and how to fix them.',
     readTime: '5 min read',
-    image: 'https://picsum.photos/seed/resume-laptop/600/380',
+    // Resume document being reviewed on a desk
+    image: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=600&h=380&fit=crop&auto=format',
     author: { name: 'Sarah Mitchell', role: 'Career Expert', avatar: 'https://i.pravatar.cc/48?img=47' },
   },
   {
@@ -34,7 +35,8 @@ const ARTICLES = [
     title: 'How to Answer "Tell Me About Yourself" (With Examples)',
     excerpt: 'It\'s the most common interview opener — and most candidates blow it. Learn a simple 3-part formula that leaves a great first impression.',
     readTime: '4 min read',
-    image: 'https://picsum.photos/seed/interview-meeting/600/380',
+    // One-on-one interview across a table
+    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&h=380&fit=crop&auto=format',
     author: { name: 'James Chen', role: 'Senior Recruiter', avatar: 'https://i.pravatar.cc/48?img=12' },
   },
   {
@@ -43,7 +45,8 @@ const ARTICLES = [
     title: 'How to Negotiate Your Salary Without Feeling Awkward',
     excerpt: 'Negotiating your salary can feel uncomfortable, but it\'s expected. We break down exactly what to say and when to say it.',
     readTime: '6 min read',
-    image: 'https://picsum.photos/seed/salary-negotiation/600/380',
+    // Business handshake / deal being made
+    image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600&h=380&fit=crop&auto=format',
     author: { name: 'Emily Rodriguez', role: 'HR Consultant', avatar: 'https://i.pravatar.cc/48?img=25' },
   },
   {
@@ -52,7 +55,8 @@ const ARTICLES = [
     title: "The Hidden Job Market: How to Find Jobs That Aren't Posted",
     excerpt: 'Up to 70% of jobs are never publicly posted. Learn how networking, LinkedIn outreach, and referrals unlock unadvertised opportunities.',
     readTime: '7 min read',
-    image: 'https://picsum.photos/seed/networking-office/600/380',
+    // Professionals networking in an office
+    image: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&h=380&fit=crop&auto=format',
     author: { name: 'Marcus Johnson', role: 'Career Coach', avatar: 'https://i.pravatar.cc/48?img=15' },
   },
   {
@@ -61,7 +65,8 @@ const ARTICLES = [
     title: 'How to Ask for a Promotion (And Actually Get It)',
     excerpt: 'Timing, framing, and data are everything. Here\'s a step-by-step guide to making your case for the next level.',
     readTime: '5 min read',
-    image: 'https://picsum.photos/seed/career-growth/600/380',
+    // Confident professional presenting in a meeting
+    image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600&h=380&fit=crop&auto=format',
     author: { name: 'Sarah Mitchell', role: 'Career Expert', avatar: 'https://i.pravatar.cc/48?img=47' },
   },
   {
@@ -70,7 +75,8 @@ const ARTICLES = [
     title: 'The STAR Method: Ace Every Behavioral Interview Question',
     excerpt: 'Situation, Task, Action, Result — master this framework and you\'ll nail questions like "Tell me about a challenge you overcame."',
     readTime: '4 min read',
-    image: 'https://picsum.photos/seed/interview-panel/600/380',
+    // Panel interview with multiple interviewers
+    image: 'https://images.unsplash.com/photo-1551836022-4c4c79ecde51?w=600&h=380&fit=crop&auto=format',
     author: { name: 'James Chen', role: 'Senior Recruiter', avatar: 'https://i.pravatar.cc/48?img=12' },
   },
   {
@@ -79,7 +85,8 @@ const ARTICLES = [
     title: 'How to Write a Cover Letter That Gets Read',
     excerpt: 'Most cover letters are ignored. The ones that get read have one thing in common: they\'re tailored, specific, and short.',
     readTime: '4 min read',
-    image: 'https://picsum.photos/seed/cover-letter-desk/600/380',
+    // Person writing / typing a letter at a desk
+    image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=600&h=380&fit=crop&auto=format',
     author: { name: 'Emily Rodriguez', role: 'HR Consultant', avatar: 'https://i.pravatar.cc/48?img=25' },
   },
   {
@@ -88,7 +95,8 @@ const ARTICLES = [
     title: "Switching Careers? Here's Your 90-Day Plan",
     excerpt: 'A career change doesn\'t have to be a leap of faith. Break it into phases: research, skill-building, networking, and applying.',
     readTime: '8 min read',
-    image: 'https://picsum.photos/seed/career-change/600/380',
+    // Person planning on whiteboard / new road ahead
+    image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&h=380&fit=crop&auto=format',
     author: { name: 'Priya Patel', role: 'Career Strategist', avatar: 'https://i.pravatar.cc/48?img=32' },
   },
   {
@@ -97,7 +105,8 @@ const ARTICLES = [
     title: 'LinkedIn Profile Optimization: The Complete 2025 Guide',
     excerpt: 'Recruiters search LinkedIn 200M times a week. Optimize your profile with the right keywords, headline, and summary to get found.',
     readTime: '6 min read',
-    image: 'https://picsum.photos/seed/linkedin-laptop/600/380',
+    // Person working on laptop — digital profile
+    image: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=600&h=380&fit=crop&auto=format',
     author: { name: 'Marcus Johnson', role: 'Career Coach', avatar: 'https://i.pravatar.cc/48?img=15' },
   },
 ];
