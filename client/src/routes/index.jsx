@@ -32,6 +32,11 @@ import Pricing from '../pages/Pricing.jsx';
 import SalaryTools from '../pages/SalaryTools.jsx';
 import CareerAdvice from '../pages/CareerAdvice.jsx';
 import CareerAdviceArticle from '../pages/CareerAdviceArticle.jsx';
+import AboutUs from '../pages/AboutUs.jsx';
+import Contact from '../pages/Contact.jsx';
+import PrivacyPolicy from '../pages/PrivacyPolicy.jsx';
+import TermsOfService from '../pages/TermsOfService.jsx';
+import Accessibility from '../pages/Accessibility.jsx';
 
 export default function AppRoutes() {
   return (
@@ -50,6 +55,11 @@ export default function AppRoutes() {
         <Route path="salary-tools"              element={<SalaryTools />} />
         <Route path="career-advice"             element={<CareerAdvice />} />
         <Route path="career-advice/:slug"       element={<CareerAdviceArticle />} />
+        <Route path="about"                     element={<AboutUs />} />
+        <Route path="contact"                   element={<Contact />} />
+        <Route path="privacy-policy"            element={<PrivacyPolicy />} />
+        <Route path="terms"                     element={<TermsOfService />} />
+        <Route path="accessibility"             element={<Accessibility />} />
         <Route path="login"               element={<Login />} />
         <Route path="register"            element={<Register />} />
         <Route path="forgot-password"     element={<ForgotPassword />} />

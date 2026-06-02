@@ -1,39 +1,52 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { jobsService } from '../services/jobs.service.js';
 import api from '../services/api.js';
 import JobCard, { JobCardSkeleton } from '../components/jobs/JobCard.jsx';
 
-/* ─── Category icons & colors ─────────────────────────────────────── */
-const CAT_ICONS = {
-  engineering: '⚙️', technology: '💻', design: '🎨', marketing: '📣',
-  sales: '📈', finance: '💰', healthcare: '🏥', education: '📚',
-  hr: '👥', legal: '⚖️', operations: '🔧', data: '📊',
+/* ─── Category images (slug → Unsplash photo) ─────────────────────── */
+const CAT_IMAGES = {
+  // Developers working at laptops with code on screen
+  engineering:       'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400&h=280&fit=crop&auto=format',
+  // Designer working on UI/UX with stylus tablet
+  design:            'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=280&fit=crop&auto=format',
+  // Server room / cloud infrastructure racks
+  'devops-cloud':    'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&h=280&fit=crop&auto=format',
+  // Data analytics dashboard with charts
+  'data-analytics':  'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=280&fit=crop&auto=format',
+  // Marketing team brainstorming around a table
+  marketing:         'https://images.unsplash.com/photo-1533750349088-cd871a92f312?w=400&h=280&fit=crop&auto=format',
+  // Product team planning / roadmap sticky notes
+  product:           'https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=400&h=280&fit=crop&auto=format',
+  // Customer success / support team with headsets
+  'customer-success':'https://images.unsplash.com/photo-1556761175-4b46a572b786?w=400&h=280&fit=crop&auto=format',
+  // Finance professional reviewing charts and documents
+  finance:           'https://images.unsplash.com/photo-1554224154-26032ffc0d07?w=400&h=280&fit=crop&auto=format',
+  // HR team meeting / people management
+  'human-resources': 'https://images.unsplash.com/photo-1521737604082-89b033d2f900?w=400&h=280&fit=crop&auto=format',
+  // Legal documents and gavel on desk
+  legal:             'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400&h=280&fit=crop&auto=format',
+  // Sales team presenting pitch on screen
+  sales:             'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=280&fit=crop&auto=format',
+  // Operations / logistics planning
+  operations:        'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=400&h=280&fit=crop&auto=format',
 };
-const catIcon = (name) => CAT_ICONS[name?.toLowerCase()] ?? '💼';
 
-const CAT_COLORS = [
-  'bg-violet-100 text-violet-600 group-hover:bg-violet-200',
-  'bg-blue-100 text-blue-600 group-hover:bg-blue-200',
-  'bg-rose-100 text-rose-600 group-hover:bg-rose-200',
-  'bg-amber-100 text-amber-600 group-hover:bg-amber-200',
-  'bg-emerald-100 text-emerald-600 group-hover:bg-emerald-200',
-  'bg-cyan-100 text-cyan-600 group-hover:bg-cyan-200',
-  'bg-orange-100 text-orange-600 group-hover:bg-orange-200',
-  'bg-indigo-100 text-indigo-600 group-hover:bg-indigo-200',
-];
+const catImage = (slug) =>
+  CAT_IMAGES[slug] ??
+  'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=280&fit=crop&auto=format';
 
 /* ─── Static fallback data ────────────────────────────────────────── */
 const STATIC_CATS = [
-  { label: 'Technology',   icon: '💻', q: 'Technology' },
-  { label: 'Design',       icon: '🎨', q: 'Design' },
-  { label: 'Marketing',    icon: '📣', q: 'Marketing' },
-  { label: 'Finance',      icon: '💰', q: 'Finance' },
-  { label: 'Healthcare',   icon: '🏥', q: 'Healthcare' },
-  { label: 'Engineering',  icon: '⚙️', q: 'Engineering' },
-  { label: 'Sales',        icon: '📈', q: 'Sales' },
-  { label: 'Education',    icon: '📚', q: 'Education' },
+  { label: 'Technology',  q: 'Technology',  image: CAT_IMAGES.engineering },
+  { label: 'Design',      q: 'Design',      image: CAT_IMAGES.design },
+  { label: 'Marketing',   q: 'Marketing',   image: CAT_IMAGES.marketing },
+  { label: 'Finance',     q: 'Finance',     image: CAT_IMAGES.finance },
+  { label: 'Healthcare',  q: 'Healthcare',  image: 'https://images.unsplash.com/photo-1551076805-e1869033e561?w=400&h=280&fit=crop&auto=format' },
+  { label: 'Engineering', q: 'Engineering', image: 'https://images.unsplash.com/photo-1537462715879-360eeb61a0ad?w=400&h=280&fit=crop&auto=format' },
+  { label: 'Sales',       q: 'Sales',       image: CAT_IMAGES.sales },
+  { label: 'Education',   q: 'Education',   image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&h=280&fit=crop&auto=format' },
 ];
 
 const TESTIMONIALS = [
@@ -93,13 +106,55 @@ const ADVICE_CARDS = [
   },
 ];
 
+/* ─── Animated counter ────────────────────────────────────────────── */
+function AnimatedCounter({ value, duration = 1800 }) {
+  // Parse "12,400+" → { num: 12400, suffix: "+" }  |  "500K+" → { num: 500, suffix: "K+" }
+  const { num, suffix } = useMemo(() => {
+    const m = value.match(/^([\d,]+)([A-Za-z+%]*)$/);
+    if (!m) return { num: 0, suffix: value };
+    return { num: parseInt(m[1].replace(/,/g, ''), 10), suffix: m[2] };
+  }, [value]);
+
+  const [count, setCount] = useState(0);
+  const [started, setStarted] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setStarted(true); observer.disconnect(); } },
+      { threshold: 0.4 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!started) return;
+    const startTime = performance.now();
+    const tick = (now) => {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      setCount(Math.floor(eased * num));
+      if (progress < 1) requestAnimationFrame(tick);
+      else setCount(num);
+    };
+    requestAnimationFrame(tick);
+  }, [started, num, duration]);
+
+  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
+}
+
 /* ─── Skeleton helpers ────────────────────────────────────────────── */
 function CatSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-6 animate-pulse text-center">
-      <div className="w-14 h-14 bg-gray-200 rounded-2xl mx-auto mb-4" />
-      <div className="h-3.5 bg-gray-200 rounded w-3/4 mx-auto mb-2" />
-      <div className="h-3 bg-gray-100 rounded w-1/2 mx-auto" />
+    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden animate-pulse">
+      <div className="aspect-[4/3] bg-gray-200" />
+      <div className="p-4 text-center">
+        <div className="h-3.5 bg-gray-200 rounded w-3/4 mx-auto mb-2" />
+        <div className="h-3 bg-gray-100 rounded w-1/2 mx-auto" />
+      </div>
     </div>
   );
 }
@@ -110,14 +165,31 @@ function CompanySkeleton() {
 
 /* ─── Company logo tile ───────────────────────────────────────────── */
 function CompanyTile({ company }) {
+  const [imgValid, setImgValid] = useState(false);
+
+  useEffect(() => {
+    if (!company.logoUrl) return;
+    const img = new Image();
+    img.onload = () => {
+      // Reject images that loaded but have zero/tiny dimensions (corrupt or placeholder)
+      if (img.naturalWidth > 4 && img.naturalHeight > 4) setImgValid(true);
+    };
+    img.onerror = () => {};
+    img.src = company.logoUrl;
+  }, [company.logoUrl]);
+
   return (
     <Link
       to={`/companies/${company.companySlug}`}
       title={company.companyName}
-      className="group flex flex-col items-center justify-center w-36 h-24 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-card hover:border-primary-200 hover:-translate-y-0.5 transition-all duration-200 shrink-0 px-4 gap-2"
+      className="group flex flex-col items-center justify-center w-36 h-24 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-card hover:border-primary-400 hover:-translate-y-0.5 transition-all duration-200 shrink-0 px-4 gap-2"
     >
-      {company.logoUrl ? (
-        <img src={company.logoUrl} alt={company.companyName} className="h-8 w-auto object-contain" />
+      {imgValid ? (
+        <img
+          src={company.logoUrl}
+          alt={company.companyName}
+          className="h-8 max-w-[80px] object-contain"
+        />
       ) : (
         <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-lg">
           {company.companyName?.[0]?.toUpperCase()}
@@ -391,24 +463,57 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════
-          STATS BAR
+          STATS TILES
       ══════════════════════════════════════════════════ */}
-      <section className="border-b border-gray-100 bg-white">
-        <div className="max-w-5xl mx-auto px-4 grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-gray-100">
-          {[
-            { value: '12,400+', label: 'Active Jobs',      icon: '💼', bg: 'bg-violet-50' },
-            { value: '3,200+',  label: 'Top Companies',    icon: '🏢', bg: 'bg-blue-50' },
-            { value: '8,500+',  label: 'Monthly Hires',    icon: '✅', bg: 'bg-emerald-50' },
-            { value: '500K+',   label: 'Registered Users', icon: '👤', bg: 'bg-amber-50' },
-          ].map(({ value, label, icon, bg }) => (
-            <div key={label} className="flex flex-col items-center text-center py-8 px-4">
-              <div className={`w-11 h-11 rounded-2xl ${bg} flex items-center justify-center text-xl mb-3`}>
-                {icon}
+      <section className="py-10 bg-gray-50 border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              {
+                value: '12,400+', label: 'Active Jobs',
+                img: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&h=400&fit=crop&auto=format',
+                accent: 'from-violet-600/80 to-primary-700/80',
+              },
+              {
+                value: '3,200+', label: 'Top Companies',
+                img: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&h=400&fit=crop&auto=format',
+                accent: 'from-blue-600/80 to-blue-800/80',
+              },
+              {
+                value: '8,500+', label: 'Monthly Hires',
+                img: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=400&fit=crop&auto=format',
+                accent: 'from-emerald-600/80 to-teal-800/80',
+              },
+              {
+                value: '500K+', label: 'Registered Users',
+                img: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&h=400&fit=crop&auto=format',
+                accent: 'from-amber-500/80 to-orange-700/80',
+              },
+            ].map(({ value, label, img, accent }) => (
+              <div
+                key={label}
+                className="relative rounded-2xl overflow-hidden h-44 shadow-md group"
+              >
+                {/* Background image */}
+                <img
+                  src={img}
+                  alt={label}
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                {/* Gradient overlay */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${accent}`} />
+                {/* Content */}
+                <div className="relative h-full flex flex-col items-center justify-center text-white text-center px-4">
+                  <div className="text-3xl sm:text-4xl font-extrabold tracking-tight drop-shadow-md">
+                    <AnimatedCounter value={value} />
+                  </div>
+                  <div className="text-xs sm:text-sm font-semibold mt-1.5 text-white/90 uppercase tracking-widest">
+                    {label}
+                  </div>
+                </div>
               </div>
-              <div className="text-3xl font-extrabold text-gray-900 tracking-tight mb-0.5">{value}</div>
-              <div className="text-xs font-medium text-gray-500">{label}</div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
@@ -426,7 +531,7 @@ export default function Home() {
               </div>
               <SectionLink to="/jobs">Explore all jobs</SectionLink>
             </div>
-            <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
+            <div className="flex gap-4 overflow-x-auto pb-3 pt-2 px-1 scrollbar-hide">
               {companiesLoading
                 ? Array.from({ length: 8 }).map((_, i) => <CompanySkeleton key={i} />)
                 : companies.map((c) => <CompanyTile key={c.id} company={c} />)
@@ -454,35 +559,49 @@ export default function Home() {
             {catLoading
               ? Array.from({ length: 8 }).map((_, i) => <CatSkeleton key={i} />)
               : categories.length > 0
-                ? categories.slice(0, 8).map((cat, idx) => (
+                ? categories.slice(0, 8).map((cat) => (
                     <Link
                       key={cat.id}
                       to={`/jobs?category_id=${cat.id}`}
-                      className="group bg-white rounded-2xl border border-gray-100 shadow-card p-6 text-center hover:shadow-card-hover hover:border-primary-100 hover:-translate-y-1 transition-all duration-200"
+                      className="group bg-white rounded-2xl border border-gray-100 shadow-card overflow-hidden hover:shadow-card-hover hover:border-primary-200 hover:-translate-y-1 transition-all duration-200"
                     >
-                      <div className={`w-14 h-14 rounded-2xl ${CAT_COLORS[idx % CAT_COLORS.length]} flex items-center justify-center text-2xl mb-4 mx-auto transition-all duration-200`}>
-                        {cat.icon || catIcon(cat.name)}
+                      <div className="aspect-[4/3] overflow-hidden bg-gray-100">
+                        <img
+                          src={catImage(cat.slug)}
+                          alt={cat.name}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
                       </div>
-                      <p className="font-semibold text-gray-800 text-sm leading-snug group-hover:text-primary-700 transition-colors">
-                        {cat.name}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1.5 font-medium">
-                        {cat.job_count ?? 0} {cat.job_count === 1 ? 'opening' : 'openings'}
-                      </p>
+                      <div className="p-4 text-center">
+                        <p className="font-semibold text-gray-800 text-sm leading-snug group-hover:text-primary-700 transition-colors">
+                          {cat.name}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1 font-medium">
+                          {cat.job_count ?? 0} {cat.job_count === 1 ? 'opening' : 'openings'}
+                        </p>
+                      </div>
                     </Link>
                   ))
-                : STATIC_CATS.map((cat, idx) => (
+                : STATIC_CATS.map((cat) => (
                     <Link
                       key={cat.label}
                       to={`/jobs?keyword=${cat.q}`}
-                      className="group bg-white rounded-2xl border border-gray-100 shadow-card p-6 text-center hover:shadow-card-hover hover:border-primary-100 hover:-translate-y-1 transition-all duration-200"
+                      className="group bg-white rounded-2xl border border-gray-100 shadow-card overflow-hidden hover:shadow-card-hover hover:border-primary-200 hover:-translate-y-1 transition-all duration-200"
                     >
-                      <div className={`w-14 h-14 rounded-2xl ${CAT_COLORS[idx % CAT_COLORS.length]} flex items-center justify-center text-2xl mb-4 mx-auto transition-all duration-200`}>
-                        {cat.icon}
+                      <div className="aspect-[4/3] overflow-hidden bg-gray-100">
+                        <img
+                          src={cat.image}
+                          alt={cat.label}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
                       </div>
-                      <p className="font-semibold text-gray-800 text-sm group-hover:text-primary-700 transition-colors">
-                        {cat.label}
-                      </p>
+                      <div className="p-4 text-center">
+                        <p className="font-semibold text-gray-800 text-sm group-hover:text-primary-700 transition-colors">
+                          {cat.label}
+                        </p>
+                      </div>
                     </Link>
                   ))
             }

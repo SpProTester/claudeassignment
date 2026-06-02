@@ -12,24 +12,23 @@ const FOOTER_LINKS = {
   ],
   'For Employers': [
     { label: 'Post a Job',           to: '/register?role=employer' },
-    { label: 'Employer Dashboard',   to: '/employer/dashboard' },
     { label: 'Manage Applicants',    to: '/employer/jobs' },
     { label: 'Company Profile',      to: '/employer/company' },
     { label: 'Pricing Plans',        to: '/pricing' },
   ],
   'Resources': [
-    { label: 'Career Advice',        to: '/jobs' },
-    { label: 'Salary Guide',         to: '/jobs' },
-    { label: 'Resume Tips',          to: '/jobs' },
-    { label: 'Interview Prep',       to: '/jobs' },
-    { label: 'Job Market Trends',    to: '/jobs' },
+    { label: 'Career Advice',        to: '/career-advice' },
+    { label: 'Salary Guide',         to: '/salary-tools' },
+    { label: 'Resume Tips',          to: '/career-advice' },
+    { label: 'Interview Prep',       to: '/career-advice' },
+    { label: 'Job Market Trends',    to: '/salary-tools' },
   ],
   'Company': [
-    { label: 'About Us',             to: '/' },
-    { label: 'Contact',              to: '/' },
-    { label: 'Privacy Policy',       to: '/' },
-    { label: 'Terms of Service',     to: '/' },
-    { label: 'Cookie Settings',      to: '/' },
+    { label: 'About Us',             to: '/about' },
+    { label: 'Contact',              to: '/contact' },
+    { label: 'Privacy Policy',       to: '/privacy-policy' },
+    { label: 'Terms of Service',     to: '/terms' },
+    { label: 'Cookie Settings',      to: '/privacy-policy' },
   ],
 };
 
@@ -127,9 +126,9 @@ export default function Footer() {
         <div className="border-t border-gray-800/60 mt-12 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-600">
           <p>© {new Date().getFullYear()} WorkHunt, Inc. All rights reserved.</p>
           <div className="flex gap-5">
-            <Link to="/" className="hover:text-gray-400 transition-colors">Privacy Policy</Link>
-            <Link to="/" className="hover:text-gray-400 transition-colors">Terms of Service</Link>
-            <Link to="/" className="hover:text-gray-400 transition-colors">Accessibility</Link>
+            <Link to="/privacy-policy"  className="hover:text-gray-400 transition-colors">Privacy Policy</Link>
+            <Link to="/terms"           className="hover:text-gray-400 transition-colors">Terms of Service</Link>
+            <Link to="/accessibility"   className="hover:text-gray-400 transition-colors">Accessibility</Link>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { jobsService, applicationsService } from '../services/jobs.service.js';
 import { seekerService } from '../services/seeker.service.js';
 import { useAuth } from '../hooks/useAuth.js';
@@ -198,12 +198,36 @@ export default function JobDetail() {
     retry: false,
   });
 
+  const queryClient = useQueryClient();
+
   const { data: resumeData, isLoading: resumesLoading } = useQuery({
     queryKey: ['my-resumes'],
     queryFn:  () => seekerService.getResumes(),
     enabled:  user?.role === 'seeker',
     staleTime: 2 * 60 * 1000,
   });
+
+  const { data: savedJobsData } = useQuery({
+    queryKey: ['seeker', 'saved-jobs'],
+    queryFn:  () => seekerService.getSavedJobs(),
+    enabled:  user?.role === 'seeker',
+    staleTime: 60 * 1000,
+  });
+
+  const isSaved = (savedJobsData?.savedJobs ?? []).some(s => s.job?.id === job?.id);
+
+  const saveMutation = useMutation({
+    mutationFn: () => seekerService.saveJob(job.id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['seeker', 'saved-jobs'] }),
+  });
+
+  const unsaveMutation = useMutation({
+    mutationFn: () => seekerService.unsaveJob(job.id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['seeker', 'saved-jobs'] }),
+  });
+
+  const toggleSave = () => isSaved ? unsaveMutation.mutate() : saveMutation.mutate();
+  const saveLoading = saveMutation.isPending || unsaveMutation.isPending;
 
   const myResumes = resumeData?.resumes ?? [];
   const hasResume = myResumes.length > 0;
@@ -378,6 +402,23 @@ export default function JobDetail() {
 
                 {user && user.role !== 'seeker' && (
                   <p className="text-xs text-gray-400 text-center">Log in as a job seeker to apply.</p>
+                )}
+
+                {user?.role === 'seeker' && (
+                  <button
+                    onClick={toggleSave}
+                    disabled={saveLoading}
+                    className={`mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border text-sm font-semibold transition-colors
+                      ${isSaved
+                        ? 'bg-primary-50 border-primary-300 text-primary-700 hover:bg-red-50 hover:border-red-300 hover:text-red-600'
+                        : 'bg-white border-gray-200 text-gray-700 hover:border-primary-400 hover:text-primary-600'
+                      } disabled:opacity-50`}
+                  >
+                    <svg className="w-4 h-4" fill={isSaved ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                    {saveLoading ? 'Saving…' : isSaved ? 'Saved' : 'Save Job'}
+                  </button>
                 )}
 
                 {job.expiresAt && (

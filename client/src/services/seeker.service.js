@@ -55,6 +55,7 @@ export const seekerService = {
 
   // ── Saved Jobs ───────────────────────────────────────────────────────────
   getSavedJobs: () => api.get(`${BASE}/saved-jobs`).then((r) => r.data),
+  saveJob:   (jobId) => api.post(`${BASE}/saved-jobs/${jobId}`).then((r) => r.data),
   unsaveJob: (jobId) => api.delete(`${BASE}/saved-jobs/${jobId}`),
 
   // ── Applications (seeker-owned) ──────────────────────────────────────────
