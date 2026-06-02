@@ -266,6 +266,47 @@ export const getTrendingKeywords = async (req, res, next) => {
 };
 
 /**
+ * GET /api/jobs/suggestions?q=...
+ * Returns up to 8 autocomplete suggestions (job titles + company names).
+ */
+export const getSuggestions = async (req, res, next) => {
+  try {
+    const q = (req.query.q ?? '').trim();
+    if (q.length < 2) return sendSuccess(res, { suggestions: [] });
+
+    const sql = `
+      SELECT term, type FROM (
+        (
+          SELECT DISTINCT title AS term, 'job' AS type
+          FROM   job_listings
+          WHERE  title ILIKE $1
+            AND  status NOT IN ('expired', 'closed')
+          LIMIT  6
+        )
+        UNION ALL
+        (
+          SELECT DISTINCT company_name AS term, 'company' AS type
+          FROM   employer_profiles
+          WHERE  company_name ILIKE $1
+          LIMIT  4
+        )
+      ) combined
+      ORDER BY type, term
+      LIMIT 8
+    `.trim();
+
+    const rows = await sequelize.query(sql, {
+      bind: [`${q}%`],
+      type: QueryTypes.SELECT,
+    });
+
+    sendSuccess(res, { suggestions: rows });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
  * GET /api/jobs/:slug
  * Single job detail by slug. Increments views_count atomically via CTE.
  */

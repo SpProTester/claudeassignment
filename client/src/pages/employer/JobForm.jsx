@@ -305,7 +305,7 @@ function Step4({ watch, skills, isEdit }) {
             { value: 'active', label: 'Publish Now', desc: 'Immediately visible to all seekers.', color: 'green' },
           ].map(({ value, label, desc, color }) => (
             <label key={value} className="cursor-pointer">
-              <input type="radio" className="sr-only" value={value} {...(watch('status') === value ? { defaultChecked: true } : {})} name="_statusPreview" readOnly />
+              <input type="radio" className="sr-only" value={value} {...register('status')} />
               <div className={`p-3 rounded-lg border-2 text-sm transition-colors ${
                 watch('status') === value
                   ? `border-${color}-400 bg-${color}-50`

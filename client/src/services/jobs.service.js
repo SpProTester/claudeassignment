@@ -63,6 +63,9 @@ export const jobsService = {
   /** Top searched keywords this week. */
   getTrending: () => api.get('/jobs/trending'),
 
+  /** Autocomplete suggestions for the search box. */
+  getSuggestions: (q) => api.get('/jobs/suggestions', { params: { q } }),
+
   // Employer CRUD
   create:        (data)     => api.post('/jobs', data),
   update:        (id, data) => api.patch(`/jobs/${id}`, data),

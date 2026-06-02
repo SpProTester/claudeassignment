@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { jobsService } from '../services/jobs.service.js';
@@ -94,12 +94,39 @@ function AdviceCard({ icon, title, desc, to }) {
 
 /* ─── Page ──────────────────────────────────────────────────────── */
 export default function Home() {
-  const [keyword, setKeyword]   = useState('');
-  const [location, setLocation] = useState('');
+  const [keyword, setKeyword]       = useState('');
+  const [location, setLocation]     = useState('');
+  const [showSugg, setShowSugg]     = useState(false);
+  const [debouncedQ, setDebouncedQ] = useState('');
+  const suggRef = useRef(null);
   const navigate = useNavigate();
+
+  // Debounce keyword -> debouncedQ (300 ms)
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(keyword.trim()), 300);
+    return () => clearTimeout(t);
+  }, [keyword]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (suggRef.current && !suggRef.current.contains(e.target)) setShowSugg(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const { data: suggData } = useQuery({
+    queryKey: ['job-suggestions', debouncedQ],
+    queryFn:  () => jobsService.getSuggestions(debouncedQ),
+    enabled:  debouncedQ.length >= 2,
+    staleTime: 30 * 1000,
+  });
+  const suggestions = suggData?.data?.suggestions ?? [];
 
   const handleSearch = (e) => {
     e.preventDefault();
+    setShowSugg(false);
     const p = new URLSearchParams();
     if (keyword.trim())  p.set('keyword',  keyword.trim());
     if (location.trim()) p.set('location', location.trim());
@@ -144,7 +171,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════
           HERO SECTION
       ══════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary-800 via-primary-700 to-primary-600">
+      <section className="relative bg-gradient-to-br from-primary-800 via-primary-700 to-primary-600">
         {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-white/5" />
@@ -172,8 +199,8 @@ export default function Home() {
             onSubmit={handleSearch}
             className="bg-white rounded-2xl p-2 flex flex-col sm:flex-row gap-2 shadow-2xl max-w-3xl mx-auto"
           >
-            {/* Job title input */}
-            <div className="flex items-center gap-3 flex-1 px-4 py-1">
+            {/* Job title input with autocomplete */}
+            <div className="relative flex items-center gap-3 flex-1 px-4 py-1" ref={suggRef}>
               <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -181,9 +208,35 @@ export default function Home() {
                 type="text"
                 placeholder="Job title, keyword, or company"
                 value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
+                onChange={(e) => { setKeyword(e.target.value); setShowSugg(true); }}
+                onFocus={() => setShowSugg(true)}
                 className="flex-1 text-gray-800 placeholder-gray-400 text-sm bg-transparent outline-none py-2"
+                autoComplete="off"
               />
+              {/* Suggestions dropdown */}
+              {showSugg && suggestions.length > 0 && (
+                <ul className="absolute top-full left-0 mt-2 w-full bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+                  {suggestions.map((s, i) => (
+                    <li key={i}>
+                      <button
+                        type="button"
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 flex items-center gap-3"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setKeyword(s.term);
+                          setShowSugg(false);
+                        }}
+                      >
+                        <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={s.type === 'company' ? 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' : 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'} />
+                        </svg>
+                        <span className="flex-1">{s.term}</span>
+                        <span className="text-xs text-gray-400 capitalize">{s.type}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             {/* Divider */}
@@ -289,7 +342,7 @@ export default function Home() {
             {catLoading
               ? Array.from({ length: 8 }).map((_, i) => <CatSkeleton key={i} />)
               : categories.length > 0
-                ? categories.slice(0, 8).map((cat) => (
+                ? categories.map((cat) => (
                     <Link
                       key={cat.id}
                       to={`/jobs?category_id=${cat.id}`}
@@ -297,7 +350,7 @@ export default function Home() {
                     >
                       <div className="text-3xl mb-3">{cat.icon || catIcon(cat.name)}</div>
                       <p className="font-semibold text-gray-800 text-xs leading-snug group-hover:text-primary-700">{cat.name}</p>
-                      <p className="text-xs text-gray-400 mt-1">{cat.job_count} jobs</p>
+                      <p className="text-xs text-gray-400 mt-1">{cat.job_count} {cat.job_count === 1 ? 'job' : 'jobs'}</p>
                     </Link>
                   ))
                 : STATIC_CATS.map((cat) => (
