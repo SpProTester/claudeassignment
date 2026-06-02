@@ -55,10 +55,38 @@ const TESTIMONIALS = [
 ];
 
 const ADVICE_CARDS = [
-  { icon: '📝', title: 'Resume Writing Tips', desc: 'Craft a resume that gets past ATS and into human hands with our expert formatting guide.', to: '/career-advice', accent: 'bg-violet-100' },
-  { icon: '🎯', title: 'Ace Your Interview', desc: 'Prepare for tough questions and make a lasting impression on every hiring manager you meet.', to: '/career-advice', accent: 'bg-blue-100' },
-  { icon: '💡', title: 'Career Switching Guide', desc: 'Planning a pivot? Learn how to position your transferable skills for maximum impact in a new field.', to: '/career-advice', accent: 'bg-amber-100' },
-  { icon: '💰', title: 'Salary Negotiation', desc: 'Know your market worth and negotiate confidently with our data-driven step-by-step playbook.', to: '/salary-tools', accent: 'bg-emerald-100' },
+  {
+    image: 'https://picsum.photos/seed/resume-laptop/600/380',
+    label: 'RESUME GUIDES',
+    labelColor: 'text-teal-600',
+    title: 'Resume Writing Tips',
+    desc: 'Craft a resume that gets past ATS and into human hands with our expert formatting guide.',
+    to: '/career-advice/resume-mistakes',
+  },
+  {
+    image: 'https://picsum.photos/seed/interview-meeting/600/380',
+    label: 'INTERVIEWING',
+    labelColor: 'text-blue-600',
+    title: 'Ace Your Interview',
+    desc: 'Prepare for tough questions and make a lasting impression on every hiring manager you meet.',
+    to: '/career-advice/tell-me-about-yourself',
+  },
+  {
+    image: 'https://picsum.photos/seed/career-change/600/380',
+    label: 'CAREER GROWTH',
+    labelColor: 'text-violet-600',
+    title: 'Career Switching Guide',
+    desc: 'Planning a pivot? Learn how to position your transferable skills for maximum impact in a new field.',
+    to: '/career-advice/career-change-90-day-plan',
+  },
+  {
+    image: 'https://picsum.photos/seed/salary-negotiation/600/380',
+    label: 'SALARY GUIDES',
+    labelColor: 'text-emerald-600',
+    title: 'Salary Negotiation',
+    desc: 'Know your market worth and negotiate confidently with our data-driven step-by-step playbook.',
+    to: '/career-advice/salary-negotiation',
+  },
 ];
 
 /* ─── Skeleton helpers ────────────────────────────────────────────── */
@@ -112,25 +140,33 @@ function StarRating({ count = 5 }) {
 }
 
 /* ─── Advice Card ─────────────────────────────────────────────────── */
-function AdviceCard({ icon, title, desc, to, accent }) {
+function AdviceCard({ image, label, labelColor, title, desc, to }) {
   return (
     <Link
       to={to}
-      className="group bg-white rounded-2xl border border-gray-100 shadow-card p-6 hover:shadow-card-hover hover:-translate-y-1 transition-all duration-200 flex flex-col"
+      className="group bg-white rounded-2xl border border-gray-100 shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all duration-200 flex flex-col overflow-hidden"
     >
-      <div className={`w-12 h-12 rounded-xl ${accent} flex items-center justify-center text-2xl mb-5`}>
-        {icon}
+      <div className="aspect-[16/10] overflow-hidden bg-gray-100">
+        <img
+          src={image}
+          alt={title}
+          loading="lazy"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
       </div>
-      <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors text-sm leading-snug">
-        {title}
-      </h3>
-      <p className="text-sm text-gray-500 leading-relaxed flex-1">{desc}</p>
-      <span className="inline-flex items-center gap-1.5 mt-5 text-xs font-bold text-primary-600 group-hover:gap-2.5 transition-all duration-150">
-        Read article
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-        </svg>
-      </span>
+      <div className="p-5 flex flex-col flex-1">
+        <p className={`text-xs font-bold uppercase tracking-[0.12em] mb-2 ${labelColor}`}>{label}</p>
+        <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors text-sm leading-snug">
+          {title}
+        </h3>
+        <p className="text-sm text-gray-500 leading-relaxed flex-1">{desc}</p>
+        <span className="inline-flex items-center gap-1.5 mt-4 text-xs font-bold text-primary-600 group-hover:gap-2.5 transition-all duration-150">
+          Read article
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+          </svg>
+        </span>
+      </div>
     </Link>
   );
 }
