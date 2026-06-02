@@ -1,12 +1,21 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
 
+const CAT_LABEL = {
+  Resume:          { text: 'RESUME GUIDES',   color: 'text-teal-600' },
+  Interview:       { text: 'INTERVIEWING',    color: 'text-blue-600' },
+  'Career Growth': { text: 'CAREER GROWTH',   color: 'text-violet-600' },
+  'Job Search':    { text: 'JOB SEARCH',      color: 'text-orange-600' },
+  Salary:          { text: 'SALARY GUIDES',   color: 'text-emerald-600' },
+};
+
 const ARTICLES = [
   {
     slug: 'resume-mistakes',
     category: 'Resume',
     title: '10 Resume Mistakes That Get You Rejected Instantly',
     readTime: '5 min read',
-    icon: '📄',
+    image: 'https://picsum.photos/seed/resume-laptop/1200/500',
+    author: { name: 'Sarah Mitchell', role: 'Career Expert', avatar: 'https://i.pravatar.cc/48?img=47' },
     body: [
       {
         heading: 'Why your resume gets 7 seconds',
@@ -59,7 +68,8 @@ const ARTICLES = [
     category: 'Interview',
     title: 'How to Answer "Tell Me About Yourself" (With Examples)',
     readTime: '4 min read',
-    icon: '🎤',
+    image: 'https://picsum.photos/seed/interview-meeting/1200/500',
+    author: { name: 'James Chen', role: 'Senior Recruiter', avatar: 'https://i.pravatar.cc/48?img=12' },
     body: [
       {
         heading: 'Why this question trips people up',
@@ -88,7 +98,8 @@ const ARTICLES = [
     category: 'Salary',
     title: 'How to Negotiate Your Salary Without Feeling Awkward',
     readTime: '6 min read',
-    icon: '💰',
+    image: 'https://picsum.photos/seed/salary-negotiation/1200/500',
+    author: { name: 'Emily Rodriguez', role: 'HR Consultant', avatar: 'https://i.pravatar.cc/48?img=25' },
     body: [
       {
         heading: 'Negotiation is expected',
@@ -121,7 +132,8 @@ const ARTICLES = [
     category: 'Job Search',
     title: "The Hidden Job Market: How to Find Jobs That Aren't Posted",
     readTime: '7 min read',
-    icon: '🔍',
+    image: 'https://picsum.photos/seed/networking-office/1200/500',
+    author: { name: 'Marcus Johnson', role: 'Career Coach', avatar: 'https://i.pravatar.cc/48?img=15' },
     body: [
       {
         heading: 'What is the hidden job market?',
@@ -154,7 +166,8 @@ const ARTICLES = [
     category: 'Career Growth',
     title: 'How to Ask for a Promotion (And Actually Get It)',
     readTime: '5 min read',
-    icon: '🚀',
+    image: 'https://picsum.photos/seed/career-growth/1200/500',
+    author: { name: 'Sarah Mitchell', role: 'Career Expert', avatar: 'https://i.pravatar.cc/48?img=47' },
     body: [
       {
         heading: 'Do the job before you get the title',
@@ -183,7 +196,8 @@ const ARTICLES = [
     category: 'Interview',
     title: 'The STAR Method: Ace Every Behavioral Interview Question',
     readTime: '4 min read',
-    icon: '⭐',
+    image: 'https://picsum.photos/seed/interview-panel/1200/500',
+    author: { name: 'James Chen', role: 'Senior Recruiter', avatar: 'https://i.pravatar.cc/48?img=12' },
     body: [
       {
         heading: 'What is STAR?',
@@ -216,7 +230,8 @@ const ARTICLES = [
     category: 'Resume',
     title: 'How to Write a Cover Letter That Gets Read',
     readTime: '4 min read',
-    icon: '✉️',
+    image: 'https://picsum.photos/seed/cover-letter-desk/1200/500',
+    author: { name: 'Emily Rodriguez', role: 'HR Consultant', avatar: 'https://i.pravatar.cc/48?img=25' },
     body: [
       {
         heading: 'Most cover letters are skipped',
@@ -245,7 +260,8 @@ const ARTICLES = [
     category: 'Career Growth',
     title: "Switching Careers? Here's Your 90-Day Plan",
     readTime: '8 min read',
-    icon: '🔄',
+    image: 'https://picsum.photos/seed/career-change/1200/500',
+    author: { name: 'Priya Patel', role: 'Career Strategist', avatar: 'https://i.pravatar.cc/48?img=32' },
     body: [
       {
         heading: 'Why most career changes stall',
@@ -274,7 +290,8 @@ const ARTICLES = [
     category: 'Job Search',
     title: 'LinkedIn Profile Optimisation: The Complete 2025 Guide',
     readTime: '6 min read',
-    icon: '🔗',
+    image: 'https://picsum.photos/seed/linkedin-laptop/1200/500',
+    author: { name: 'Marcus Johnson', role: 'Career Coach', avatar: 'https://i.pravatar.cc/48?img=15' },
     body: [
       {
         heading: 'Why LinkedIn matters more than ever',
@@ -311,34 +328,60 @@ export default function CareerAdviceArticle() {
   if (!article) return <Navigate to="/career-advice" replace />;
 
   const related = ARTICLES.filter((a) => a.slug !== slug && a.category === article.category).slice(0, 2);
+  const label = CAT_LABEL[article.category] ?? { text: article.category.toUpperCase(), color: 'text-primary-600' };
 
   return (
     <div className="bg-white min-h-screen">
-      {/* Hero */}
-      <div className="bg-gradient-to-br from-primary-800 via-primary-700 to-primary-600 py-12">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link to="/career-advice" className="inline-flex items-center gap-1 text-primary-200 hover:text-white text-sm mb-6 transition-colors">
+
+      {/* ── Header ──────────────────────────────────────────── */}
+      <div className="border-b border-gray-100">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-6">
+          <Link
+            to="/career-advice"
+            className="inline-flex items-center gap-1 text-gray-400 hover:text-primary-600 text-sm font-medium transition-colors mb-6"
+          >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Career Advice
           </Link>
-          <div className="flex items-center gap-2 mb-4">
-            <span className="inline-block bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
-              {article.category}
-            </span>
-            <span className="text-primary-300 text-xs">{article.readTime}</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight">
+
+          <p className={`text-xs font-bold uppercase tracking-[0.12em] mb-3 ${label.color}`}>
+            {label.text}
+          </p>
+
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 leading-tight mb-6">
             {article.title}
           </h1>
+
+          {/* Author + meta */}
+          <div className="flex items-center gap-3">
+            <img
+              src={article.author.avatar}
+              alt={article.author.name}
+              className="w-10 h-10 rounded-full object-cover bg-gray-200 shrink-0"
+            />
+            <div>
+              <p className="text-sm font-semibold text-gray-800">{article.author.name}</p>
+              <p className="text-xs text-gray-400">{article.author.role} · {article.readTime}</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Article body */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-6xl mb-8 text-center">{article.icon}</div>
+      {/* ── Hero image ───────────────────────────────────────── */}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+        <div className="aspect-[21/9] overflow-hidden rounded-2xl bg-gray-100">
+          <img
+            src={article.image}
+            alt={article.title}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      </div>
 
+      {/* ── Article body ─────────────────────────────────────── */}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="space-y-8">
           {article.body.map((section, i) => (
             <div key={i}>
@@ -348,34 +391,46 @@ export default function CareerAdviceArticle() {
           ))}
         </div>
 
-        {/* CTA */}
-        <div className="mt-14 bg-primary-50 rounded-2xl p-8 text-center border border-primary-100">
+        {/* ── CTA ──────────────────────────────────────────────── */}
+        <div className="mt-14 bg-gray-50 rounded-2xl p-8 text-center border border-gray-100">
           <h3 className="text-xl font-bold text-gray-900 mb-2">Ready to put this into practice?</h3>
           <p className="text-gray-500 text-sm mb-6">Browse thousands of open roles and take the next step.</p>
           <div className="flex items-center justify-center gap-3 flex-wrap">
             <Link to="/jobs" className="btn-primary">Browse Jobs</Link>
-            <Link to="/career-advice" className="px-5 py-2.5 rounded-xl border border-primary-200 text-primary-700 font-semibold text-sm hover:bg-primary-100 transition-colors">
+            <Link
+              to="/career-advice"
+              className="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-semibold text-sm hover:border-primary-400 hover:text-primary-700 transition-colors"
+            >
               More Articles
             </Link>
           </div>
         </div>
 
-        {/* Related articles */}
+        {/* ── Related articles ──────────────────────────────────── */}
         {related.length > 0 && (
           <div className="mt-12">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Related articles</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <h3 className="text-lg font-bold text-gray-900 mb-5">Related articles</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {related.map((r) => (
                 <Link
                   key={r.slug}
                   to={`/career-advice/${r.slug}`}
-                  className="flex gap-4 items-start p-4 rounded-xl border border-gray-100 hover:border-primary-200 hover:bg-primary-50 transition-all group"
+                  className="group flex flex-col"
                 >
-                  <span className="text-2xl shrink-0">{r.icon}</span>
-                  <div>
-                    <p className="font-semibold text-sm text-gray-900 group-hover:text-primary-700 leading-snug">{r.title}</p>
-                    <p className="text-xs text-gray-400 mt-1">{r.readTime}</p>
+                  <div className="aspect-[16/9] overflow-hidden rounded-xl mb-3 bg-gray-100">
+                    <img
+                      src={r.image}
+                      alt={r.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
                   </div>
+                  <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${(CAT_LABEL[r.category] ?? {}).color ?? 'text-primary-600'}`}>
+                    {(CAT_LABEL[r.category] ?? {}).text ?? r.category}
+                  </p>
+                  <p className="font-semibold text-sm text-gray-900 group-hover:text-primary-700 leading-snug">
+                    {r.title}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">{r.readTime}</p>
                 </Link>
               ))}
             </div>
