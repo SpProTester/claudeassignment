@@ -21,9 +21,11 @@ function MonsterLogo() {
 export default function Navbar() {
   const { user, logout, role } = useAuth();
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen]       = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [resumeOpen, setResumeOpen]   = useState(false);
   const profileRef = useRef(null);
+  const resumeRef  = useRef(null);
 
   const handleLogout = () => {
     logout();
@@ -32,12 +34,11 @@ export default function Navbar() {
     setMenuOpen(false);
   };
 
-  /* close dropdown on outside click */
+  /* close dropdowns on outside click */
   useEffect(() => {
     function handle(e) {
-      if (profileRef.current && !profileRef.current.contains(e.target)) {
-        setProfileOpen(false);
-      }
+      if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
+      if (resumeRef.current  && !resumeRef.current.contains(e.target))  setResumeOpen(false);
     }
     document.addEventListener('mousedown', handle);
     return () => document.removeEventListener('mousedown', handle);
@@ -55,21 +56,14 @@ export default function Navbar() {
 
           {/* Desktop center nav */}
           <nav className="hidden md:flex items-center gap-1">
-            <NavLink
-              to="/jobs"
-              className={({ isActive }) =>
-                `px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150 ${
-                  isActive
-                    ? 'text-primary-600 bg-primary-50'
-                    : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50'
-                }`
-              }
-            >
-              Find Jobs
-            </NavLink>
-            {role !== 'seeker' && (
+            {[
+              { to: '/jobs',          label: 'Find Jobs' },
+              { to: '/salary-tools',  label: 'Salary Tools' },
+              { to: '/career-advice', label: 'Career Advice' },
+            ].map(({ to, label }) => (
               <NavLink
-                to="/pricing"
+                key={to}
+                to={to}
                 className={({ isActive }) =>
                   `px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150 ${
                     isActive
@@ -78,9 +72,58 @@ export default function Navbar() {
                   }`
                 }
               >
-                For Employers
+                {label}
               </NavLink>
-            )}
+            ))}
+
+            {/* Resume dropdown */}
+            <div className="relative" ref={resumeRef}>
+              <button
+                onClick={() => setResumeOpen((o) => !o)}
+                className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-primary-600 hover:bg-gray-50 transition-colors duration-150"
+              >
+                Resume
+                <svg className={`w-3.5 h-3.5 transition-transform duration-150 ${resumeOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {resumeOpen && (
+                <div className="absolute left-0 mt-2 w-52 bg-white rounded-2xl shadow-lg border border-gray-100 py-1 z-50 animate-fade-in">
+                  <Link
+                    to={user && role === 'seeker' ? '/seeker/resume' : '/login'}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700"
+                    onClick={() => setResumeOpen(false)}
+                  >
+                    <svg className="w-4 h-4 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    My Resumes
+                  </Link>
+                  <Link
+                    to={user && role === 'seeker' ? '/seeker/resume/builder/new' : '/login'}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700"
+                    onClick={() => setResumeOpen(false)}
+                  >
+                    <svg className="w-4 h-4 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Build a Resume
+                  </Link>
+                  <div className="border-t border-gray-100 my-1" />
+                  <Link
+                    to="/career-advice"
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700"
+                    onClick={() => setResumeOpen(false)}
+                  >
+                    <svg className="w-4 h-4 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                    Resume Tips
+                  </Link>
+                </div>
+              )}
+            </div>
+
             {user && (
               <NavLink
                 to={dashboardPath}
@@ -177,7 +220,7 @@ export default function Navbar() {
               <>
                 <Link
                   to="/login"
-                  className="text-sm font-semibold text-gray-700 hover:text-primary-600 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="text-sm font-semibold text-gray-600 hover:text-primary-600 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Sign In
                 </Link>
@@ -186,7 +229,7 @@ export default function Navbar() {
                 </Link>
                 <Link
                   to="/register?role=employer"
-                  className="text-sm font-semibold text-primary-600 border border-primary-200 px-4 py-2 rounded-lg hover:bg-primary-50 transition-colors"
+                  className="text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 border border-primary-600 px-4 py-2 rounded-lg transition-colors shadow-sm"
                 >
                   Post a Job
                 </Link>
@@ -213,12 +256,26 @@ export default function Navbar() {
         {/* Mobile menu */}
         {menuOpen && (
           <div className="md:hidden py-3 border-t border-gray-100 space-y-1 animate-slide-up">
+            {[
+              { to: '/jobs',          label: 'Find Jobs' },
+              { to: '/salary-tools',  label: 'Salary Tools' },
+              { to: '/career-advice', label: 'Career Advice' },
+            ].map(({ to, label }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className="flex items-center px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-primary-50 hover:text-primary-700 rounded-xl"
+                onClick={() => setMenuOpen(false)}
+              >
+                {label}
+              </NavLink>
+            ))}
             <NavLink
-              to="/jobs"
+              to={user && role === 'seeker' ? '/seeker/resume' : '/login'}
               className="flex items-center px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-primary-50 hover:text-primary-700 rounded-xl"
               onClick={() => setMenuOpen(false)}
             >
-              Find Jobs
+              Resume
             </NavLink>
             {role !== 'seeker' && (
               <NavLink

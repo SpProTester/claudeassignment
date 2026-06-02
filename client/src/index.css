@@ -67,7 +67,7 @@
   /* ── Cards ───────────────────────────────────────────── */
   .card {
     @apply bg-white rounded-2xl border border-gray-100 shadow-card p-5
-           hover:shadow-card-hover hover:border-primary-100
+           hover:shadow-card-hover hover:border-primary-100 hover:-translate-y-0.5
            transition-all duration-200;
   }
   .card-flat {
@@ -95,11 +95,14 @@
   }
 
   /* ── Section headings ────────────────────────────────── */
+  .section-eyebrow {
+    @apply block text-xs font-bold uppercase tracking-[0.15em] text-primary-600 mb-2;
+  }
   .section-title {
-    @apply text-2xl font-bold text-gray-900;
+    @apply text-3xl font-extrabold text-gray-900 tracking-tight;
   }
   .section-subtitle {
-    @apply text-gray-500 text-base mt-1;
+    @apply text-gray-500 text-base mt-1.5 leading-relaxed;
   }
 
   /* ── Sidebar nav link ────────────────────────────────── */

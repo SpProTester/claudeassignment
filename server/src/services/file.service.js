@@ -109,6 +109,7 @@ export async function deleteFile(filePath) {
  * storagePath is absolute; returns the URL suffix starting at /uploads/.
  */
 export function toPublicUrl(storagePath) {
+  if (!storagePath) return null;
   const rel = path.relative(UPLOADS_ROOT, storagePath).replace(/\\/g, '/');
   return `/uploads/${rel}`;
 }

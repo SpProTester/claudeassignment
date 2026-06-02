@@ -29,6 +29,9 @@ import EmployerCompany from '../pages/employer/EmployerCompany.jsx';
 import BillingPage from '../pages/employer/BillingPage.jsx';
 import InvoicesPage from '../pages/employer/InvoicesPage.jsx';
 import Pricing from '../pages/Pricing.jsx';
+import SalaryTools from '../pages/SalaryTools.jsx';
+import CareerAdvice from '../pages/CareerAdvice.jsx';
+import CareerAdviceArticle from '../pages/CareerAdviceArticle.jsx';
 
 export default function AppRoutes() {
   return (
@@ -44,6 +47,9 @@ export default function AppRoutes() {
         <Route path="jobs/:slug"          element={<JobDetail />} />
         <Route path="companies/:slug"     element={<CompanyProfile />} />
         <Route path="pricing"             element={<Pricing />} />
+        <Route path="salary-tools"              element={<SalaryTools />} />
+        <Route path="career-advice"             element={<CareerAdvice />} />
+        <Route path="career-advice/:slug"       element={<CareerAdviceArticle />} />
         <Route path="login"               element={<Login />} />
         <Route path="register"            element={<Register />} />
         <Route path="forgot-password"     element={<ForgotPassword />} />
