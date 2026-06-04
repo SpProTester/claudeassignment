@@ -1,7 +1,7 @@
 import Badge from '../../components/common/Badge';
 
 export default function UserDetailPanel({ data, onClose, onStatusToggle }) {
-  const { user, stats } = data?.data || {};
+  const { user, stats } = data || {};
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
