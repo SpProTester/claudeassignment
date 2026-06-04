@@ -375,3 +375,125 @@ export const getJobAnalytics = async (req, res, next) => {
     next(err);
   }
 };
+
+// ── GET /employer/applicants  (all applications across all employer jobs) ─────
+
+export const listAllApplicants = async (req, res, next) => {
+  try {
+    const employer = await EmployerProfile.findOne({ where: { userId: req.user.id } });
+    if (!employer) return sendError(res, 'Company profile not found.', 404);
+
+    const allJobs = await JobListing.findAll({ where: { employerId: employer.id }, attributes: ['id'] });
+    const allJobIds = allJobs.map((j) => j.id);
+
+    if (allJobIds.length === 0) {
+      return sendSuccess(res, {
+        applications: [],
+        pagination: { total: 0, page: 1, pages: 0, limit: 25 },
+        stats: { total: 0, applied: 0, shortlisted: 0, interview: 0, rejected: 0, hired: 0, offer: 0 },
+      });
+    }
+
+    const { atsStage, jobId, search, page = 1, limit = 25, sortBy = 'createdAt', sortOrder = 'DESC' } = req.query;
+    const parsedPage  = Math.max(1, parseInt(page, 10));
+    const parsedLimit = Math.min(100, Math.max(1, parseInt(limit, 10)));
+    const offset = (parsedPage - 1) * parsedLimit;
+
+    let seekerIdFilter;
+    if (search) {
+      const matched = await User.findAll({ where: { fullName: { [Op.iLike]: `%${search}%` } }, attributes: ['id'] });
+      seekerIdFilter = matched.map((u) => u.id);
+      if (seekerIdFilter.length === 0) {
+        const stats = await stageSummary(allJobIds);
+        return sendSuccess(res, { applications: [], pagination: { total: 0, page: parsedPage, pages: 0, limit: parsedLimit }, stats });
+      }
+    }
+
+    const where = { jobId: jobId && allJobIds.includes(jobId) ? jobId : { [Op.in]: allJobIds } };
+    if (atsStage) where.atsStage = atsStage;
+    if (seekerIdFilter) where.seekerId = { [Op.in]: seekerIdFilter };
+
+    const validSortFields = ['createdAt', 'updatedAt', 'atsStage'];
+    const orderField = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
+    const orderDir   = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
+    const { count, rows: applications } = await Application.findAndCountAll({
+      where,
+      include: [
+        {
+          model: User, as: 'seeker', attributes: ['id', 'fullName', 'email'],
+          include: [{ model: SeekerProfile, as: 'seekerProfile', attributes: ['headline', 'location', 'experienceYears', 'openToWork'] }],
+        },
+        { model: JobListing, as: 'job', attributes: ['id', 'title', 'jobType', 'workMode', 'location'] },
+        { model: Resume, as: 'resume', attributes: ['id', 'fileName', 'fileSize', 'label', 'resumeType'] },
+      ],
+      order: [[orderField, orderDir]],
+      limit: parsedLimit,
+      offset,
+      distinct: true,
+    });
+
+    const stats = await stageSummary(allJobIds);
+    sendSuccess(res, { applications, pagination: { total: count, page: parsedPage, pages: Math.ceil(count / parsedLimit), limit: parsedLimit }, stats });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ── GET /employer/applicants/:id/detail ──────────────────────────────────────
+
+export const getApplicant = async (req, res, next) => {
+  try {
+    const { application, error } = await resolveApplication(req.params.id, req.user.id, req.user.role);
+    if (error) return sendError(res, error.msg, error.code);
+
+    const full = await Application.findByPk(req.params.id, {
+      include: [
+        {
+          model: User, as: 'seeker', attributes: ['id', 'fullName', 'email', 'createdAt'],
+          include: [{ model: SeekerProfile, as: 'seekerProfile' }],
+        },
+        { model: JobListing, as: 'job', attributes: ['id', 'title', 'jobType', 'workMode', 'location', 'salaryMin', 'salaryMax'] },
+        { model: Resume, as: 'resume', attributes: ['id', 'fileName', 'fileSize', 'label', 'resumeType', 'storagePath'] },
+      ],
+    });
+
+    let notes = [];
+    if (full.employerNotes) {
+      try {
+        const parsed = JSON.parse(full.employerNotes);
+        notes = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        notes = [{ note: full.employerNotes, createdAt: full.updatedAt?.toISOString(), authorId: null }];
+      }
+    }
+
+    sendSuccess(res, { application: full, notes });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ── Helper ────────────────────────────────────────────────────────────────────
+
+async function stageSummary(jobIds) {
+  const [total, rows] = await Promise.all([
+    Application.count({ where: { jobId: { [Op.in]: jobIds } } }),
+    Application.findAll({
+      where: { jobId: { [Op.in]: jobIds } },
+      attributes: ['atsStage', [sequelize.fn('COUNT', sequelize.col('id')), 'cnt']],
+      group: ['atsStage'],
+      raw: true,
+    }),
+  ]);
+  const m = rows.reduce((acc, r) => { acc[r.atsStage] = parseInt(r.cnt, 10); return acc; }, {});
+  return {
+    total,
+    applied:     m.applied     || 0,
+    shortlisted: m.shortlisted || 0,
+    interview:   (m.interview  || 0) + (m.screening || 0) + (m.reviewing || 0),
+    rejected:    m.rejected    || 0,
+    hired:       m.hired       || 0,
+    offer:       m.offer       || 0,
+  };
+}
