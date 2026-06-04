@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { body, param, query } from 'express-validator';
 import {
   listApplicants,
+  listAllApplicants,
+  getApplicant,
   updateAtsStage,
   addNote,
   setRating,
@@ -22,6 +24,23 @@ router.use(protect, restrictTo('employer', 'admin'));
 const appId  = param('id').isUUID(4).withMessage('Application ID must be a valid UUID.');
 const jobId  = param('id').isUUID(4).withMessage('Job ID must be a valid UUID.');
 const jobIdA = param('jobId').isUUID(4).withMessage('Job ID must be a valid UUID.');
+
+// ─── GET /employer/applicants  (all applications across employer jobs) ───────
+router.get(
+  '/applicants',
+  [
+    query('atsStage').optional().isIn(ATS_STAGES).withMessage(`atsStage must be one of: ${ATS_STAGES.join(', ')}.`),
+    query('page').optional().isInt({ min: 1 }).withMessage('page must be a positive integer.'),
+    query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('limit must be between 1 and 100.'),
+    query('sortBy').optional().isIn(['createdAt', 'updatedAt', 'atsStage']).withMessage('Invalid sortBy field.'),
+    query('sortOrder').optional().isIn(['ASC', 'DESC']).withMessage('sortOrder must be ASC or DESC.'),
+  ],
+  validate,
+  listAllApplicants
+);
+
+// ─── GET /employer/applicants/:id/detail ─────────────────────────────────────
+router.get('/applicants/:id/detail', appId, validate, getApplicant);
 
 // ─── GET /employer/jobs/:id/applicants ───────────────────────────────────────
 // NOTE: mounted at /employer — so the full path is /api/employer/jobs/:id/applicants

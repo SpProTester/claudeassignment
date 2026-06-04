@@ -17,6 +17,10 @@ export const employerService = {
   sendEmail:      (id, data)      => api.post(`/employer/applicants/${id}/email`, data),
   resumeUrl:      (id)            => `/api/employer/applicants/${id}/resume`,
 
+  // ── All Applications (ATS module) ─────────────────────────────────────────
+  listAllApplications: (params) => api.get('/employer/applicants', { params }),
+  getApplication:      (id)     => api.get(`/employer/applicants/${id}/detail`),
+
   // ── Analytics ─────────────────────────────────────────────────────────────
   getAnalytics: (jobId) => api.get(`/employer/analytics/${jobId}`),
 

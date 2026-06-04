@@ -59,10 +59,10 @@ export default function EmployerDashboard() {
   const jobs = data?.data?.jobs ?? [];
 
   const stats = {
-    activeJobs:      jobs.filter((j) => j.status === 'active').length,
-    totalApplicants: jobs.reduce((s, j) => s + (parseInt(j.applicationsCount, 10) || 0), 0),
-    totalViews:      jobs.reduce((s, j) => s + (j.viewsCount || 0), 0),
-    draftJobs:       jobs.filter((j) => j.status === 'draft').length,
+    totalJobs:  jobs.length,
+    activeJobs: jobs.filter((j) => j.status === 'active').length,
+    totalViews: jobs.reduce((s, j) => s + (j.viewsCount || 0), 0),
+    draftJobs:  jobs.filter((j) => j.status === 'draft').length,
   };
 
   const recentJobs = [...jobs]
@@ -131,10 +131,10 @@ export default function EmployerDashboard() {
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard label="Active Jobs"      value={stats.activeJobs}      icon={icons.jobs}       color="purple" loading={isLoading} />
-        <StatsCard label="Total Applicants" value={stats.totalApplicants} icon={icons.applicants} color="green"  loading={isLoading} />
-        <StatsCard label="Total Views"      value={stats.totalViews}      icon={icons.views}      color="blue"   loading={isLoading} />
-        <StatsCard label="Draft Jobs"       value={stats.draftJobs}       icon={icons.draft}      color="orange" loading={isLoading} />
+        <StatsCard label="Total Jobs"  value={stats.totalJobs}  icon={icons.jobs}   color="purple" loading={isLoading} />
+        <StatsCard label="Active Jobs" value={stats.activeJobs} icon={icons.jobs}   color="green"  loading={isLoading} />
+        <StatsCard label="Total Views" value={stats.totalViews} icon={icons.views}  color="blue"   loading={isLoading} />
+        <StatsCard label="Draft Jobs"  value={stats.draftJobs}  icon={icons.draft}  color="orange" loading={isLoading} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -166,7 +166,7 @@ export default function EmployerDashboard() {
                     {job.title?.[0]?.toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <Link to={`/employer/jobs/${job.id}/applicants`}
+                    <Link to={`/employer/jobs/${job.id}/edit`}
                       className="text-sm font-semibold text-gray-900 hover:text-primary-600 truncate block transition-colors">
                       {job.title}
                     </Link>
@@ -220,28 +220,22 @@ export default function EmployerDashboard() {
             </div>
           </div>
 
-          {/* Top performing job */}
-          {!isLoading && topJob && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-base">🏆</span>
-                <h2 className="font-bold text-gray-900 text-sm">Top Job by Applications</h2>
+          {/* Applications CTA card */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-xl bg-primary-100 flex items-center justify-center">
+                <svg className="w-4 h-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                </svg>
               </div>
-              <p className="text-sm font-semibold text-gray-900 truncate">{topJob.title}</p>
-              <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
-                <span className="flex items-center gap-1">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>
-                  {parseInt(topJob.applicationsCount, 10) || 0} applicants
-                </span>
-                <span>{topJob.viewsCount || 0} views</span>
-              </div>
-              <Link to={`/employer/jobs/${topJob.id}/applicants`}
-                className="mt-3 text-xs font-semibold text-primary-600 hover:text-primary-700 flex items-center gap-1">
-                Review applicants
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-              </Link>
+              <h2 className="font-bold text-gray-900 text-sm">Job Applications</h2>
             </div>
-          )}
+            <p className="text-xs text-gray-500 mb-3">Review and manage all candidate applications in one place.</p>
+            <Link to="/employer/applications"
+              className="block text-center py-2 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold transition-colors">
+              Open Applications →
+            </Link>
+          </div>
 
           {/* Plan card */}
           {!billingLoading && (

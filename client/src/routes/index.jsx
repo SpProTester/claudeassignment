@@ -25,6 +25,8 @@ import EmployerDashboard from '../pages/employer/EmployerDashboard.jsx';
 import EmployerJobs from '../pages/employer/EmployerJobs.jsx';
 import JobForm from '../pages/employer/JobForm.jsx';
 import ApplicantsBoard from '../pages/employer/ApplicantsBoard.jsx';
+import EmployerApplications from '../pages/employer/EmployerApplications.jsx';
+import ApplicationDetail from '../pages/employer/ApplicationDetail.jsx';
 import EmployerCompany from '../pages/employer/EmployerCompany.jsx';
 import BillingPage from '../pages/employer/BillingPage.jsx';
 import InvoicesPage from '../pages/employer/InvoicesPage.jsx';
@@ -90,6 +92,8 @@ export default function AppRoutes() {
           <Route path="jobs/new"            element={<JobForm />} />
           <Route path="jobs/:id/edit"       element={<JobForm />} />
           <Route path="jobs/:id/applicants" element={<ApplicantsBoard />} />
+          <Route path="applications"        element={<EmployerApplications />} />
+          <Route path="applications/:id"    element={<ApplicationDetail />} />
           <Route path="company"             element={<EmployerCompany />} />
           <Route path="billing"             element={<BillingPage />} />
           <Route path="billing/invoices"    element={<InvoicesPage />} />
