@@ -12,6 +12,7 @@ export const employerService = {
   // ── ATS / Applicants ──────────────────────────────────────────────────────
   listApplicants: (jobId, params) => api.get(`/employer/jobs/${jobId}/applicants`, { params }),
   updateStage:    (id, stage)     => api.put(`/employer/applicants/${id}/stage`, { stage }),
+  scheduleInterview: (id, data)   => api.put(`/employer/applicants/${id}/interview`, data),
   addNote:        (id, note)      => api.post(`/employer/applicants/${id}/note`, { note }),
   setRating:      (id, rating)    => api.put(`/employer/applicants/${id}/rating`, { rating }),
   sendEmail:      (id, data)      => api.post(`/employer/applicants/${id}/email`, data),

@@ -5,12 +5,14 @@ import {
   listAllApplicants,
   getApplicant,
   updateAtsStage,
+  scheduleInterview,
   addNote,
   setRating,
   streamResume,
   sendApplicantEmail,
   getJobAnalytics,
   ATS_STAGES,
+  MEETING_PROVIDERS,
 } from '../controllers/ats.controller.js';
 import { protect, restrictTo } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validate.middleware.js';
@@ -78,6 +80,32 @@ router.put(
   ],
   validate,
   updateAtsStage
+);
+
+// ─── PUT /employer/applicants/:id/interview ──────────────────────────────────
+// Schedules an interview (date/time + meeting provider/link) and moves the
+// application to the "interview" stage in one step, notifying the candidate.
+router.put(
+  '/applicants/:id/interview',
+  [
+    appId,
+    body('scheduledAt')
+      .isISO8601()
+      .withMessage('scheduledAt must be a valid date/time.'),
+    body('meetingProvider')
+      .isIn(MEETING_PROVIDERS)
+      .withMessage(`meetingProvider must be one of: ${MEETING_PROVIDERS.join(', ')}.`),
+    body('meetingLink')
+      .isURL({ require_protocol: true })
+      .withMessage('meetingLink must be a valid URL including http(s)://.'),
+    body('notes')
+      .optional({ checkFalsy: true })
+      .trim()
+      .isLength({ max: 1000 })
+      .withMessage('Notes must be at most 1 000 characters.'),
+  ],
+  validate,
+  scheduleInterview
 );
 
 // ─── POST /employer/applicants/:id/note ──────────────────────────────────────

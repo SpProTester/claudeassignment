@@ -43,6 +43,22 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      interviewScheduledAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      interviewMeetingLink: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      interviewMeetingProvider: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+      },
+      interviewNotes: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
     },
     {
       tableName: 'applications',

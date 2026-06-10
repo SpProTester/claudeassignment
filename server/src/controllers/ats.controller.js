@@ -25,6 +25,15 @@ export const ATS_STAGES = [
   'rejected',
 ];
 
+// Supported video-meeting providers for interview scheduling
+export const MEETING_PROVIDERS = ['google_meet', 'microsoft_teams', 'other'];
+
+const MEETING_PROVIDER_LABELS = {
+  google_meet: 'Google Meet',
+  microsoft_teams: 'Microsoft Teams',
+  other: 'Video Call',
+};
+
 // Copy used for notifications and emails when a stage transition occurs
 const STAGE_COPY = {
   applied:     { title: 'Application Received',        body: 'Your application has been received and is being reviewed.' },
@@ -172,6 +181,71 @@ export const updateAtsStage = async (req, res, next) => {
     }).catch((err) => console.error('[ats] createNotification failed:', err.message));
 
     sendSuccess(res, { application }, `Stage updated to "${stage}".`);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ── PUT /employer/applicants/:id/interview ───────────────────────────────────
+//
+// Moves the application to the "interview" stage and stores the meeting
+// details (date/time, provider, link, notes) so they can be surfaced to the
+// candidate in-app and relayed via a richer interview-invitation email.
+
+export const scheduleInterview = async (req, res, next) => {
+  try {
+    const { application, error } = await resolveApplication(req.params.id, req.user.id, req.user.role);
+    if (error) return sendError(res, error.msg, error.code);
+
+    const { scheduledAt, meetingProvider, meetingLink, notes } = req.body;
+    const previousStage = application.atsStage;
+
+    await application.update({
+      atsStage: 'interview',
+      interviewScheduledAt: scheduledAt,
+      interviewMeetingLink: meetingLink,
+      interviewMeetingProvider: meetingProvider,
+      interviewNotes: notes ?? null,
+    });
+
+    const jobTitle = application.job.title;
+    const companyName = application.job.employer.companyName;
+    const providerLabel = MEETING_PROVIDER_LABELS[meetingProvider] ?? MEETING_PROVIDER_LABELS.other;
+    const formattedWhen = new Date(scheduledAt).toLocaleString('en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+
+    const seeker = await User.findByPk(application.seekerId, { attributes: ['id', 'email', 'fullName'] }).catch(() => null);
+
+    createNotification(application.seekerId, 'application_update', {
+      title: 'Interview Scheduled',
+      body: `Your interview for ${jobTitle} at ${companyName} is scheduled for ${formattedWhen} via ${providerLabel}. Check your email for the meeting link.`,
+      metadata: {
+        applicationId: application.id,
+        jobId: application.jobId,
+        stage: 'interview',
+        previousStage,
+        scheduledAt,
+        meetingProvider,
+        meetingLink,
+      },
+      email: seeker
+        ? () => sendInterviewScheduledEmail({
+            to: seeker.email,
+            seekerName: seeker.fullName,
+            jobTitle,
+            companyName,
+            applicationId: application.id,
+            scheduledAt,
+            meetingProvider,
+            meetingLink,
+            notes,
+          })
+        : null,
+    }).catch((err) => console.error('[ats] createNotification failed:', err.message));
+
+    sendSuccess(res, { application }, 'Interview scheduled and candidate notified.');
   } catch (err) {
     next(err);
   }

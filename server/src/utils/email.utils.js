@@ -123,13 +123,50 @@ export const sendApplicationReceivedEmail = async ({ to, companyName, seekerName
 
 // ── Interview invitation (seeker) ─────────────────────────────────────────────
 
+const MEETING_PROVIDER_LABELS = {
+  google_meet: 'Google Meet',
+  microsoft_teams: 'Microsoft Teams',
+  other: 'Video Call',
+};
+
 /**
  * Sent to the seeker when their application reaches the interview stage.
+ * When meeting details are supplied (scheduledAt + meetingLink), the email
+ * includes the date/time, provider, a "Join Meeting" button and any notes.
  *
- * @param {{ to, seekerName, jobTitle, companyName, applicationId }} opts
+ * @param {{ to, seekerName, jobTitle, companyName, applicationId,
+ *            scheduledAt?, meetingProvider?, meetingLink?, notes? }} opts
  */
-export const sendInterviewScheduledEmail = async ({ to, seekerName, jobTitle, companyName, applicationId }) => {
+export const sendInterviewScheduledEmail = async ({
+  to, seekerName, jobTitle, companyName, applicationId,
+  scheduledAt, meetingProvider, meetingLink, notes,
+}) => {
   const transporter = createTransport();
+
+  const meetingBlock = meetingLink ? `
+      <table style="margin:24px 0;border-collapse:collapse;width:100%">
+        <tr>
+          <td style="padding:8px 12px;background:#eff6ff;border-radius:4px;font-size:14px">
+            <strong>When:</strong> ${new Date(scheduledAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:8px 12px;font-size:14px">
+            <strong>Where:</strong> ${MEETING_PROVIDER_LABELS[meetingProvider] ?? MEETING_PROVIDER_LABELS.other}
+          </td>
+        </tr>
+      </table>
+      <p style="text-align:center;margin:28px 0">
+        <a href="${meetingLink}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 28px;border-radius:6px">
+          Join Meeting
+        </a>
+      </p>
+      <p style="font-size:13px;color:#6b7280;word-break:break-all">Or copy this link: ${meetingLink}</p>
+      ${notes ? `<p style="margin-top:16px;padding:12px 16px;background:#fffbeb;border-left:4px solid #f59e0b;border-radius:0 4px 4px 0;font-size:14px">${notes.replace(/\n/g, '<br>')}</p>` : ''}
+  ` : `
+      <p>Please log in to your account to view further details and confirm your availability.</p>
+  `;
+
   await transporter.sendMail({
     from: FROM(),
     to,
@@ -149,7 +186,7 @@ export const sendInterviewScheduledEmail = async ({ to, seekerName, jobTitle, co
           </td>
         </tr>
       </table>
-      <p>Please log in to your account to view further details and confirm your availability.</p>
+      ${meetingBlock}
       <p style="color:#6b7280;font-size:13px">Application ID: ${applicationId}</p>
     `),
   });
