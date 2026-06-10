@@ -15,7 +15,7 @@ export default (sequelize, DataTypes) => {
       },
       passwordHash: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       role: {
         type: DataTypes.ENUM('seeker', 'employer', 'admin'),
@@ -26,6 +26,14 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.STRING(200),
         allowNull: false,
         validate: { notEmpty: true, len: [2, 200] },
+      },
+      avatarUrl: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      emailVerified: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
       },
       isVerified: {
         type: DataTypes.BOOLEAN,
@@ -61,6 +69,7 @@ export default (sequelize, DataTypes) => {
 
   User.associate = (models) => {
     User.hasOne(models.SeekerProfile, { foreignKey: 'userId', as: 'seekerProfile' });
+    User.hasMany(models.UserSocialAccount, { foreignKey: 'userId', as: 'socialAccounts' });
     User.hasOne(models.EmployerProfile, { foreignKey: 'userId', as: 'employerProfile' });
     User.hasMany(models.Resume, { foreignKey: 'seekerId', as: 'resumes' });
     User.hasMany(models.Application, { foreignKey: 'seekerId', as: 'applications' });

@@ -20,6 +20,7 @@ import ResumeBuilder from '../pages/seeker/ResumeBuilder.jsx';
 import SeekerApplications from '../pages/seeker/SeekerApplications.jsx';
 import SeekerSavedJobs from '../pages/seeker/SeekerSavedJobs.jsx';
 import SeekerAlerts from '../pages/seeker/SeekerAlerts.jsx';
+import AccountSettings from '../pages/seeker/AccountSettings.jsx';
 import EmployerLayout from '../components/employer/EmployerLayout.jsx';
 import EmployerDashboard from '../pages/employer/EmployerDashboard.jsx';
 import EmployerJobs from '../pages/employer/EmployerJobs.jsx';
@@ -115,6 +116,7 @@ export default function AppRoutes() {
           <Route path="applications"        element={<SeekerApplications />} />
           <Route path="saved-jobs"          element={<SeekerSavedJobs />} />
           <Route path="alerts"              element={<SeekerAlerts />} />
+          <Route path="account"             element={<AccountSettings />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

@@ -19,6 +19,7 @@
     "db:reset": "npm run db:migrate:undo && npm run db:migrate && npm run db:seed"
   },
   "dependencies": {
+    "apple-signin-auth": "^2.0.0",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -26,6 +27,7 @@
     "express": "^4.19.2",
     "express-rate-limit": "^7.3.1",
     "express-validator": "^7.1.0",
+    "google-auth-library": "^10.7.0",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",

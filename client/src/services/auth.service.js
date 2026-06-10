@@ -10,4 +10,13 @@ export const authService = {
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
   resetPassword: (email, otp, newPassword) =>
     api.post('/auth/reset-password', { email, otp, newPassword }),
+
+  // Social auth
+  googleLogin: (accessToken) => api.post('/auth/social/google', { accessToken }),
+  appleLogin: (identityToken, authorizationCode, user) =>
+    api.post('/auth/social/apple', { identityToken, authorizationCode, user }),
+
+  // Connected accounts
+  getConnectedAccounts: () => api.get('/auth/me/connected-accounts'),
+  unlinkSocialAccount: (provider) => api.delete(`/auth/me/connected-accounts/${provider}`),
 };

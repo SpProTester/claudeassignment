@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -6,6 +6,7 @@ import * as yup from 'yup';
 import { useAuth } from '../hooks/useAuth.js';
 import Input from '../components/common/Input.jsx';
 import Button from '../components/common/Button.jsx';
+import SocialLoginButtons from '../components/auth/SocialLoginButtons.jsx';
 
 const schema = yup.object({
   email:      yup.string().email('Enter a valid email address.').required('Email is required.'),
@@ -17,6 +18,8 @@ const REMEMBERED_EMAIL_KEY = 'jp_remembered_email';
 
 function friendlyError(err) {
   const msg = (err?.message ?? '').toLowerCase();
+  if (msg.includes('social login'))
+    return { text: err.message };
   if (msg.includes('invalid email or password') || msg.includes('invalid credentials'))
     return { text: 'Incorrect email or password. Please try again.' };
   if (msg.includes('deactivated'))
@@ -31,6 +34,7 @@ export default function Login() {
   const navigate  = useNavigate();
   const location  = useLocation();
   const from      = location.state?.from?.pathname || '/dashboard';
+  const [socialError, setSocialError] = useState('');
 
   const { register, handleSubmit, setValue, setError, formState: { errors, isSubmitting } } = useForm({
     resolver: yupResolver(schema),
@@ -43,6 +47,7 @@ export default function Login() {
   }, [setValue]);
 
   const onSubmit = async ({ email, password, rememberMe }) => {
+    setSocialError('');
     try {
       await login(email, password);
       rememberMe
@@ -52,6 +57,10 @@ export default function Login() {
     } catch (err) {
       setError('root', { message: friendlyError(err).text });
     }
+  };
+
+  const handleSocialSuccess = () => {
+    navigate(from, { replace: true });
   };
 
   return (
@@ -109,53 +118,79 @@ export default function Login() {
             <p className="text-gray-500 text-sm mt-1">Sign in to continue to your account</p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} noValidate className="bg-white rounded-2xl border border-gray-100 shadow-card p-8 space-y-5">
-            {errors.root && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-8 space-y-5">
+            {/* Social login */}
+            {socialError && (
               <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
                 <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9.303 3.376c.866 1.5-.217 3.374-1.948 3.374H4.645c-1.73 0-2.813-1.874-1.948-3.374L10.051 3.878c.866-1.5 3.032-1.5 3.898 0l7.354 12.748zM12 15.75h.007v.008H12v-.008z" />
                 </svg>
-                <span>{errors.root.message}</span>
+                <span>{socialError}</span>
               </div>
             )}
 
-            <Input
-              id="email" type="email" label="Email address"
-              placeholder="you@example.com" autoComplete="email"
-              error={errors.email?.message}
-              {...register('email')}
+            <SocialLoginButtons
+              onSuccess={handleSocialSuccess}
+              onError={setSocialError}
+              disabled={isSubmitting}
             />
 
-            <div className="space-y-1">
-              <div className="flex items-center justify-between mb-1">
-                <label htmlFor="password" className="block text-sm font-semibold text-gray-700">Password</label>
-                <Link to="/forgot-password" className="text-xs text-primary-600 hover:text-primary-700 font-semibold hover:underline">
-                  Forgot password?
-                </Link>
+            <div className="relative text-center">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-100" />
               </div>
-              <Input
-                id="password" type="password"
-                placeholder="••••••••" autoComplete="current-password"
-                error={errors.password?.message}
-                {...register('password')}
-              />
+              <span className="relative bg-white px-3 text-xs text-gray-400 font-medium">or sign in with email</span>
             </div>
 
-            <label className="flex items-center gap-2.5 cursor-pointer select-none">
-              <div className="relative">
-                <input type="checkbox" className="sr-only peer" {...register('rememberMe')} />
-                <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:bg-primary-600 peer-checked:border-primary-600 flex items-center justify-center transition-colors">
-                  <svg className="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            {/* Email/password form */}
+            <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+              {errors.root && (
+                <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
+                  <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9.303 3.376c.866 1.5-.217 3.374-1.948 3.374H4.645c-1.73 0-2.813-1.874-1.948-3.374L10.051 3.878c.866-1.5 3.032-1.5 3.898 0l7.354 12.748zM12 15.75h.007v.008H12v-.008z" />
                   </svg>
+                  <span>{errors.root.message}</span>
                 </div>
-              </div>
-              <span className="text-sm text-gray-600">Remember me for 30 days</span>
-            </label>
+              )}
 
-            <Button type="submit" loading={isSubmitting} className="w-full py-3 text-base">
-              Sign In
-            </Button>
+              <Input
+                id="email" type="email" label="Email address"
+                placeholder="you@example.com" autoComplete="email"
+                error={errors.email?.message}
+                {...register('email')}
+              />
+
+              <div className="space-y-1">
+                <div className="flex items-center justify-between mb-1">
+                  <label htmlFor="password" className="block text-sm font-semibold text-gray-700">Password</label>
+                  <Link to="/forgot-password" className="text-xs text-primary-600 hover:text-primary-700 font-semibold hover:underline">
+                    Forgot password?
+                  </Link>
+                </div>
+                <Input
+                  id="password" type="password"
+                  placeholder="••••••••" autoComplete="current-password"
+                  error={errors.password?.message}
+                  {...register('password')}
+                />
+              </div>
+
+              <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                <div className="relative">
+                  <input type="checkbox" className="sr-only peer" {...register('rememberMe')} />
+                  <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:bg-primary-600 peer-checked:border-primary-600 flex items-center justify-center transition-colors">
+                    <svg className="w-2.5 h-2.5 text-white hidden peer-checked:block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                </div>
+                <span className="text-sm text-gray-600">Remember me for 30 days</span>
+              </label>
+
+              <Button type="submit" loading={isSubmitting} className="w-full py-3 text-base">
+                Sign In
+              </Button>
+            </form>
 
             <div className="relative text-center">
               <div className="absolute inset-0 flex items-center">
@@ -170,7 +205,7 @@ export default function Login() {
             >
               Create a free account
             </Link>
-          </form>
+          </div>
 
           <p className="text-center text-sm text-gray-500 mt-5">
             Don&apos;t have an account?{' '}

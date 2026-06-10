@@ -8,6 +8,7 @@ import { useAuth } from '../hooks/useAuth.js';
 import { paymentsService } from '../services/payments.service.js';
 import Input from '../components/common/Input.jsx';
 import Button from '../components/common/Button.jsx';
+import SocialLoginButtons from '../components/auth/SocialLoginButtons.jsx';
 
 const schema = yup.object({
   role:            yup.string().oneOf(['seeker', 'employer']).required(),
@@ -74,6 +75,7 @@ export default function Register() {
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState('starter');
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [socialError, setSocialError] = useState('');
 
   const { register, handleSubmit, control, setError, formState: { errors, isSubmitting } } = useForm({
     resolver: yupResolver(schema),
@@ -186,7 +188,31 @@ export default function Register() {
                   </p>
                 </div>
 
-                <form onSubmit={handleSubmit(onSubmit)} noValidate className="bg-white rounded-2xl border border-gray-100 shadow-card p-7 space-y-5">
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-7 space-y-5">
+                  {/* Social sign-up */}
+                  {socialError && (
+                    <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
+                      <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9.303 3.376c.866 1.5-.217 3.374-1.948 3.374H4.645c-1.73 0-2.813-1.874-1.948-3.374L10.051 3.878c.866-1.5 3.032-1.5 3.898 0l7.354 12.748zM12 15.75h.007v.008H12v-.008z" />
+                      </svg>
+                      <span>{socialError}</span>
+                    </div>
+                  )}
+
+                  <SocialLoginButtons
+                    onSuccess={() => navigate('/dashboard')}
+                    onError={setSocialError}
+                    disabled={isWorking}
+                  />
+
+                  <div className="relative text-center">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-100" />
+                    </div>
+                    <span className="relative bg-white px-3 text-xs text-gray-400 font-medium">or sign up with email</span>
+                  </div>
+
+                  <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
                   {errors.root && (
                     <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
                       {errors.root.message}
@@ -246,7 +272,8 @@ export default function Register() {
                     {' '}and{' '}
                     <Link to="/" className="text-primary-600 hover:underline">Privacy Policy</Link>.
                   </p>
-                </form>
+                  </form>
+                </div>
 
                 <p className="text-center text-sm text-gray-500 mt-5">
                   Already have an account?{' '}

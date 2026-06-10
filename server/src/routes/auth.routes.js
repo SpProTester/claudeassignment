@@ -9,6 +9,10 @@ import {
   resetPassword,
   getMe,
   updateProfile,
+  googleAuth,
+  appleAuth,
+  getConnectedAccounts,
+  unlinkSocialAccount,
 } from '../controllers/auth.controller.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validate.middleware.js';
@@ -83,9 +87,28 @@ router.post(
   resetPassword
 );
 
+// ── Social Auth (Public) ───────────────────────────────────────────────────
+
+router.post(
+  '/social/google',
+  [body('accessToken').notEmpty().withMessage('Google access token is required.')],
+  validate,
+  googleAuth
+);
+
+router.post(
+  '/social/apple',
+  [body('identityToken').notEmpty().withMessage('Apple identity token is required.')],
+  validate,
+  appleAuth
+);
+
 // ── Protected ──────────────────────────────────────────────────────────────
 
 router.get('/me', authenticateToken, getMe);
 router.patch('/me', authenticateToken, updateProfile);
+
+router.get('/me/connected-accounts', authenticateToken, getConnectedAccounts);
+router.delete('/me/connected-accounts/:provider', authenticateToken, unlinkSocialAccount);
 
 export default router;

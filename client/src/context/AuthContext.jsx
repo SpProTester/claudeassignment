@@ -43,8 +43,6 @@ export function AuthProvider({ children }) {
 
   // ── Auth actions ───────────────────────────────────────────────────────────
   const login = useCallback(async (email, password) => {
-    // api interceptor unwraps axios res → res.data (the JSON body)
-    // body shape: { success, message, data: { accessToken, user } }
     const body = await authService.login(email, password);
     const { accessToken, user: u } = body.data;
     setAccessToken(accessToken);
@@ -77,10 +75,29 @@ export function AuthProvider({ children }) {
     return accessToken;
   }, []);
 
+  // provider: 'google' | 'apple'
+  // payload: { accessToken } for Google, { identityToken, authorizationCode, user } for Apple
+  const socialLogin = useCallback(async (provider, payload) => {
+    let body;
+    if (provider === 'google') {
+      body = await authService.googleLogin(payload.accessToken);
+    } else if (provider === 'apple') {
+      body = await authService.appleLogin(payload.identityToken, payload.authorizationCode, payload.user);
+    } else {
+      throw new Error(`Unsupported provider: ${provider}`);
+    }
+
+    const { accessToken, user: u } = body.data;
+    setAccessToken(accessToken);
+    setToken(accessToken);
+    setUser(u);
+    return u;
+  }, []);
+
   const role = user?.role ?? null;
 
   return (
-    <AuthContext.Provider value={{ user, token, role, loading, login, register, logout, refreshToken }}>
+    <AuthContext.Provider value={{ user, token, role, loading, login, register, logout, refreshToken, socialLogin }}>
       {children}
     </AuthContext.Provider>
   );

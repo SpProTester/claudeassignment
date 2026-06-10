@@ -20,6 +20,7 @@ import defineJobCategory from './JobCategory.js';
 import defineSearchLog from './SearchLog.js';
 import defineBillingEvent from './BillingEvent.js';
 import defineAuditLog from './AuditLog.js';
+import defineUserSocialAccount from './UserSocialAccount.js';
 
 export const sequelize = new Sequelize(
   dbConfig.database,
@@ -55,6 +56,7 @@ export const JobCategory = defineJobCategory(sequelize, DataTypes);
 export const SearchLog = defineSearchLog(sequelize, DataTypes);
 export const BillingEvent = defineBillingEvent(sequelize, DataTypes);
 export const AuditLog = defineAuditLog(sequelize, DataTypes);
+export const UserSocialAccount = defineUserSocialAccount(sequelize, DataTypes);
 
 const models = {
   User,
@@ -77,6 +79,7 @@ const models = {
   SearchLog,
   BillingEvent,
   AuditLog,
+  UserSocialAccount,
 };
 
 Object.values(models).forEach((model) => {
