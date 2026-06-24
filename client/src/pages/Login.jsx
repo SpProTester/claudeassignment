@@ -129,19 +129,6 @@ export default function Login() {
               </div>
             )}
 
-            <SocialLoginButtons
-              onSuccess={handleSocialSuccess}
-              onError={setSocialError}
-              disabled={isSubmitting}
-            />
-
-            <div className="relative text-center">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-100" />
-              </div>
-              <span className="relative bg-white px-3 text-xs text-gray-400 font-medium">or sign in with email</span>
-            </div>
-
             {/* Email/password form */}
             <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
               {errors.root && (
@@ -191,6 +178,12 @@ export default function Login() {
                 Sign In
               </Button>
             </form>
+
+            <SocialLoginButtons
+              onSuccess={handleSocialSuccess}
+              onError={setSocialError}
+              disabled={isSubmitting}
+            />
 
             <div className="relative text-center">
               <div className="absolute inset-0 flex items-center">

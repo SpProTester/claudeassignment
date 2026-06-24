@@ -189,7 +189,6 @@ export default function Register() {
                 </div>
 
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-card p-7 space-y-5">
-                  {/* Social sign-up */}
                   {socialError && (
                     <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
                       <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -198,19 +197,6 @@ export default function Register() {
                       <span>{socialError}</span>
                     </div>
                   )}
-
-                  <SocialLoginButtons
-                    onSuccess={() => navigate('/dashboard')}
-                    onError={setSocialError}
-                    disabled={isWorking}
-                  />
-
-                  <div className="relative text-center">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-gray-100" />
-                    </div>
-                    <span className="relative bg-white px-3 text-xs text-gray-400 font-medium">or sign up with email</span>
-                  </div>
 
                   <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
                   {errors.root && (
@@ -273,6 +259,12 @@ export default function Register() {
                     <Link to="/" className="text-primary-600 hover:underline">Privacy Policy</Link>.
                   </p>
                   </form>
+
+                  <SocialLoginButtons
+                    onSuccess={() => navigate('/dashboard')}
+                    onError={setSocialError}
+                    disabled={isWorking}
+                  />
                 </div>
 
                 <p className="text-center text-sm text-gray-500 mt-5">
