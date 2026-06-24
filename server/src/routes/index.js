@@ -9,6 +9,7 @@ import atsRoutes from './ats.routes.js';
 import notificationsRoutes from './notifications.routes.js';
 import paymentsRoutes from './payments.routes.js';
 import adminRoutes from './admin.routes.js';
+import contactRoutes from './contact.routes.js';
 
 const router = Router();
 
@@ -23,5 +24,6 @@ router.use('/employer', atsRoutes);
 router.use('/notifications', notificationsRoutes);
 router.use('/payments', paymentsRoutes);
 router.use('/admin', adminRoutes);
+router.use('/contact', contactRoutes);
 
 export default router;

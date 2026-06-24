@@ -28,6 +28,49 @@ const layout = (title, bodyHtml) => `
   </div>
 `;
 
+// ── Contact form ──────────────────────────────────────────────────────────────
+
+/**
+ * Forwards a contact form submission to the support inbox.
+ *
+ * @param {{ name, email, subject, message }} opts
+ */
+export const sendContactEmail = async ({ name, email, subject, message }) => {
+  const transporter = createTransport();
+  const supportEmail = process.env.SUPPORT_EMAIL || process.env.EMAIL_USER;
+  await transporter.sendMail({
+    from: FROM(),
+    to: supportEmail,
+    replyTo: email,
+    subject: `[Contact] ${subject}`,
+    html: layout('New Contact Form Submission', `
+      <table style="margin:0 0 24px;border-collapse:collapse;width:100%">
+        <tr>
+          <td style="padding:8px 12px;background:#eff6ff;border-radius:4px;font-size:14px;width:100px">
+            <strong>Name</strong>
+          </td>
+          <td style="padding:8px 12px;font-size:14px">${name}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 12px;font-size:14px"><strong>Email</strong></td>
+          <td style="padding:8px 12px;font-size:14px">
+            <a href="mailto:${email}" style="color:#2563eb">${email}</a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:8px 12px;background:#eff6ff;border-radius:4px;font-size:14px">
+            <strong>Subject</strong>
+          </td>
+          <td style="padding:8px 12px;font-size:14px">${subject}</td>
+        </tr>
+      </table>
+      <div style="background:#fff;border-left:4px solid #2563eb;padding:16px;border-radius:0 4px 4px 0;font-size:15px;line-height:1.7;white-space:pre-wrap">
+        ${message.replace(/\n/g, '<br>')}
+      </div>
+    `),
+  });
+};
+
 // ── OTP ───────────────────────────────────────────────────────────────────────
 
 export const sendOtpEmail = async (to, otp) => {

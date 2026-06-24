@@ -1,12 +1,24 @@
 import { useState } from 'react';
+import api from '../services/api.js';
 
 export default function Contact() {
-  const [form, setForm]     = useState({ name: '', email: '', subject: '', message: '' });
+  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
+    setError('');
+    setLoading(true);
+    try {
+      await api.post('/contact', form);
+      setSubmitted(true);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const field = (id, label, type = 'text', placeholder = '') => (
@@ -71,6 +83,11 @@ export default function Contact() {
             ) : (
               <>
                 <h2 className="text-lg font-bold text-gray-900 mb-6">Send us a message</h2>
+                {error && (
+                  <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl">
+                    {error}
+                  </div>
+                )}
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="grid sm:grid-cols-2 gap-5">
                     {field('name',  'Your Name',  'text',  'John Doe')}
@@ -89,7 +106,9 @@ export default function Contact() {
                       className="input-field resize-none"
                     />
                   </div>
-                  <button type="submit" className="btn-primary w-full justify-center py-3">Send Message</button>
+                  <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-3 disabled:opacity-60">
+                    {loading ? 'Sending…' : 'Send Message'}
+                  </button>
                 </form>
               </>
             )}
