@@ -19,7 +19,7 @@
     "format": "prettier --write \"**/*.{js,jsx,json,css,md}\" --ignore-path .gitignore"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
+    "concurrently": "^10.0.4",
     "prettier": "^3.3.2"
   }
 }
